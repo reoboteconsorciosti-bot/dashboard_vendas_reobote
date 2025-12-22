@@ -1,0 +1,29 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  photoUrl  String?
+  // Note: There might be other fields in the actual database, but we only map what we need.
+}
+
+model Sale {
+  id              String   @id @default(uuid())
+  consultorNome   String
+  administradora  String
+  valorLiquido    Decimal  @db.Decimal(15, 2)
+  valorBruto      Decimal  @db.Decimal(15, 2)
+  dataVenda       DateTime
+  mesCompetencia  String
+  createdAt       DateTime @default(now())
+
+  @@index([consultorNome])
+  @@index([mesCompetencia])
+}
