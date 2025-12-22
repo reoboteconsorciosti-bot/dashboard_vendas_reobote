@@ -32,6 +32,8 @@ RUN \
 FROM base AS runner
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 ENV NODE_ENV=production
 
 # Don't run as root
