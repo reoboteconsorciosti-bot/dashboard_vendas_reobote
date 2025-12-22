@@ -9,6 +9,7 @@ import { UserFormModal } from "@/components/admin/user-form-modal"
 import { DeleteConfirmationModal } from "@/components/admin/delete-confirmation-modal"
 import { ProfileMenu } from "@/components/profile-menu"
 import { BackButton } from "@/components/back-button"
+import { getUsersAction, deleteUserAction } from "@/app/actions/user-actions"
 import type { UserProfile } from "@/lib/types"
 
 export default function UsuariosPage() {
@@ -23,8 +24,8 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users")
-      const data = await response.json()
+      // Use Server Action instead of API route
+      const data = await getUsersAction()
       setUsers(data)
       setFilteredUsers(data)
     } catch (error) {
@@ -59,10 +60,8 @@ export default function UsuariosPage() {
 
   const handleDeleteConfirm = async () => {
     if (!deletingUser) return
-    const response = await fetch(`/api/users/${deletingUser.id}`, {
-      method: "DELETE",
-    })
-    if (!response.ok) throw new Error("Erro ao excluir usuário")
+    // Use Server Action
+    await deleteUserAction(deletingUser.id)
     await fetchUsers()
   }
 

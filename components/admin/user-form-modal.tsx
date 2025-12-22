@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Upload, Loader2, User } from "lucide-react"
 import type { UserProfile } from "@/lib/types"
+import { createUserAction, updateUserAction } from "@/app/actions/user-actions"
 
 interface UserFormModalProps {
   isOpen: boolean
@@ -59,19 +59,10 @@ export function UserFormModal({ isOpen, onClose, onSuccess, editingUser }: UserF
     setError("")
 
     try {
-      const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users"
-      const method = editingUser ? "PATCH" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao salvar usuário")
+      if (editingUser) {
+        await updateUserAction(editingUser.id, formData)
+      } else {
+        await createUserAction(formData)
       }
 
       onSuccess()

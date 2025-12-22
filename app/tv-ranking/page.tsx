@@ -30,6 +30,7 @@ export default function TVRankingPage() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [userProfiles, setUserProfiles] = useState<Record<string, { displayName: string; photoUrl?: string }>>({})
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   /* 
    * IMPORTANTE: Adicionar imports no topo do arquivo (não posso editar import block separado aqui facilmente com replace_file_content se não estiver incluído no range, 
@@ -109,6 +110,7 @@ export default function TVRankingPage() {
       setLoading(false)
     } catch (error) {
       console.error("Error fetching data:", error)
+      setError("Erro ao carregar dados. Verifique a conexão com o banco de dados.")
       setLoading(false)
     }
   }
@@ -141,7 +143,11 @@ export default function TVRankingPage() {
     return formatCurrency(value)
   }
 
-  if (loading || !data) {
+
+
+  // ... useEffects ...
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-6">
@@ -151,6 +157,27 @@ export default function TVRankingPage() {
       </div>
     )
   }
+
+
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
+        <div className="text-center space-y-6 max-w-lg bg-card p-10 rounded-xl border border-destructive/20 shadow-lg">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto text-destructive">
+            <LogOut className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">Algo deu errado</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-cyan-ultra-light relative">
