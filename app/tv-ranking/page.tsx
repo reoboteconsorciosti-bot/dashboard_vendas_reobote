@@ -130,16 +130,13 @@ export default function TVRankingPage() {
     const formatted = new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value)
     return formatted.replace(/\s/g, " ")
   }
 
   const formatCompact = (value: number) => {
-    if (value >= 1000000) {
-      return `R$ ${(value / 1000000).toFixed(1)}M`
-    }
     return formatCurrency(value)
   }
 

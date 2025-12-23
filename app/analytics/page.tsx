@@ -100,18 +100,12 @@ export default function AnalyticsPage() {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value)
   }
 
   const formatCompact = (value: number) => {
-    if (value >= 1000000) {
-      return `R$ ${(value / 1000000).toFixed(1)}M`
-    }
-    if (value >= 1000) {
-      return `R$ ${(value / 1000).toFixed(0)}K`
-    }
     return formatCurrency(value)
   }
 
@@ -129,7 +123,7 @@ export default function AnalyticsPage() {
   const getFilterLabel = () => {
     if (filters.mes !== "0" && filters.ano !== "0") {
       const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
-      return `${monthNames[Number.parseInt(filters.mes) - 1]}/${filters.ano}`
+      return `${monthNames[Number.parseInt(filters.mes || "1") - 1]}/${filters.ano}`
     }
     if (filters.ano !== "0") {
       return `Ano ${filters.ano}`
