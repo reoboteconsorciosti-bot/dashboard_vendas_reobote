@@ -13,11 +13,12 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-ARG DATABASE_URL
-ARG N8N_WEBHOOK_TOKEN
 
 FROM base AS builder
 WORKDIR /app
+ARG DATABASE_URL
+ARG N8N_WEBHOOK_TOKEN
+
 RUN apk add --no-cache openssl libc6-compat
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
