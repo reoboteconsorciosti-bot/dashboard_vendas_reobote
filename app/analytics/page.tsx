@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, TrendingUp, DollarSign, Target, Sparkles, X, ChevronRight } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import type { DashboardFilters, DashboardStats, VendedorRanking } from "@/lib/types"
 
@@ -18,7 +18,7 @@ export default function AnalyticsPage() {
   const [consultores, setConsultores] = useState<string[]>([])
   const [administradoras, setAdministradoras] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
-  const [userProfiles, setUserProfiles] = useState<Record<string, { displayName: string; photoUrl?: string }>>({})
+  const [userProfiles, setUserProfiles] = useState<Record<string, { displayName: string; photoUrl?: string | null }>>({})
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   const applyQuickFilter = (preset: string) => {
@@ -62,8 +62,8 @@ export default function AnalyticsPage() {
 
       const profilesMap = usersData.reduce(
         (
-          acc: Record<string, { displayName: string; photoUrl?: string }>,
-          user: { sheetName: string; displayName: string; photoUrl?: string },
+          acc: Record<string, { displayName: string; photoUrl?: string | null }>,
+          user: { sheetName: string; displayName: string; photoUrl?: string | null },
         ) => {
           acc[user.sheetName] = { displayName: user.displayName, photoUrl: user.photoUrl }
           return acc
