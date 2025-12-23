@@ -12,63 +12,77 @@ type FilterParams = {
     semestre?: string
 }
 
-async function getRankingData(filters: FilterParams = {}) {
+// Helper to build consistent WHERE clause
+function buildWhereClause(filters: FilterParams) {
     const where: any = {}
 
-    // Fix: The schema uses 'mesCompetencia' as string "fevereiro-2025" or similar? 
-    // The webhook saves: mes: mesAnoParseado.mes (number), ano: mesAnoParseado.ano (number).
-    // Wait, I need to check the schema I defined.
-    // Schema: mesCompetencia String. 
-    // Webhook logic: 
-    // data: { ... mesCompetencia: venda.mes_ano }
-    // But my webhook logic ALSO pushed to 'vendasProcessadas' array with mes/ano (numbers).
-    // The Prisma Schema I wrote:
-    // model Sale { ... mesCompetencia String ... }
-    // It does NOT have 'mes' (int) and 'ano' (int) columns?
-    // Let me check the schema I wrote in Step 27.
-    // Schema has "mesCompetencia String". It does NOT have separate month/year columns.
-    // So I can't filter by 'mes' (int) directly unless I parse 'dataVenda'.
-    // better to filter by 'dataVenda' range.
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() // 0-indexed
 
+    // Date Logic
     const dateFilter: any = {}
+    let hasDateFilter = false
+
     if (filters.ano && filters.ano !== '0') {
-        const startYear = new Date(`${filters.ano}-01-01`)
-        const endYear = new Date(`${filters.ano}-12-31T23:59:59`)
-        dateFilter.gte = startYear
-        dateFilter.lte = endYear
+        // Year is selected
+        const year = Number(filters.ano)
 
         if (filters.mes && filters.mes !== '0') {
+            // Specific Month in Year
             const monthIndex = Number(filters.mes) - 1
-            const startMonth = new Date(Number(filters.ano), monthIndex, 1)
-            const endMonth = new Date(Number(filters.ano), monthIndex + 1, 0, 23, 59, 59)
-            dateFilter.gte = startMonth
-            dateFilter.lte = endMonth
+            dateFilter.gte = new Date(year, monthIndex, 1)
+            dateFilter.lte = new Date(year, monthIndex + 1, 0, 23, 59, 59)
         } else if (filters.semestre) {
+            // Semester in Year
             const isFirst = filters.semestre === '1'
-            const startMonth = new Date(Number(filters.ano), isFirst ? 0 : 6, 1)
-            const endMonth = new Date(Number(filters.ano), isFirst ? 5 : 11 + 1, 0, 23, 59, 59)
-            dateFilter.gte = startMonth
-            dateFilter.lte = endMonth
+            dateFilter.gte = new Date(year, isFirst ? 0 : 6, 1)
+            dateFilter.lte = new Date(year, isFirst ? 5 : 11 + 1, 0, 23, 59, 59)
+        } else {
+            // Full Year
+            dateFilter.gte = new Date(year, 0, 1)
+            dateFilter.lte = new Date(year, 11, 31, 23, 59, 59)
         }
-        where.dataVenda = dateFilter
+        hasDateFilter = true
     } else if (filters.mes && filters.mes !== '0') {
-        // Month without year is tricky, usually implies current year or all years.
-        // Assuming current year for simplicity or all years matching that month?
-        // Let's rely on dataVenda.
-        // Getting all sales from a specific month across all years is rare. 
-        // Let's ignore month filter if year is missing, OR default to current year.
-        const currentYear = new Date().getFullYear()
+        // Month Only (Assume Current Year)
         const monthIndex = Number(filters.mes) - 1
-        const startMonth = new Date(currentYear, monthIndex, 1)
-        const endMonth = new Date(currentYear, monthIndex + 1, 0, 23, 59, 59)
-        where.dataVenda = {
-            gte: startMonth,
-            lte: endMonth
+        dateFilter.gte = new Date(currentYear, monthIndex, 1)
+        dateFilter.lte = new Date(currentYear, monthIndex + 1, 0, 23, 59, 59)
+        hasDateFilter = true
+    } else {
+        // NO FILTER PROVIDED -> Default to Current Month
+        // This ensures Dashboard and KPIs always show relevant data (this month) by default, NOT all time.
+        // Unless explicit '0' passed for everything? 
+        // If filters is empty object {}, we default to current month.
+        // If filters has { ano: '0', mes: '0' }, that implies "All Time".
+
+        const isExplicitAllTime = filters.ano === '0' && filters.mes === '0'
+
+        if (!isExplicitAllTime) {
+            dateFilter.gte = new Date(currentYear, currentMonth, 1)
+            dateFilter.lte = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
+            hasDateFilter = true
         }
     }
 
-    if (filters.consultor) where.consultorNome = { equals: filters.consultor, mode: 'insensitive' }
-    if (filters.administradora) where.administradora = { equals: filters.administradora, mode: 'insensitive' }
+    if (hasDateFilter) {
+        where.dataVenda = dateFilter
+    }
+
+    // Text Filters
+    if (filters.consultor && filters.consultor !== 'all') { // 'all' check just in case
+        where.consultorNome = { equals: filters.consultor, mode: 'insensitive' }
+    }
+    if (filters.administradora && filters.administradora !== 'all') {
+        where.administradora = { equals: filters.administradora, mode: 'insensitive' }
+    }
+
+    return where
+}
+
+async function getRankingData(filters: FilterParams = {}) {
+    const where = buildWhereClause(filters)
 
     // Aggregate sales by consultant
     const salesByConsultant = await prisma.sale.groupBy({
@@ -117,58 +131,12 @@ async function getRecentSalesData(limit = 10) {
         administradora: sale.administradora,
         valorLiquido: Number(sale.valorLiquido),
         dataVenda: sale.dataVenda,
-        status: 'confirmado' // Assuming all db sales are confirmed for now
+        status: 'confirmado'
     }))
 }
 
 async function getKPIData(filters: FilterParams = {}) {
-    // Re-use logic for 'where' construction (should probably refactor to shared helper)
-    const where: any = {}
-
-    // ... (Duplicate logic for where clause or shared function)
-    // For brevity in this turn, I will copy-paste the date logic or use the same filter approach.
-    // Actually, let's make a helper if possible or just inline.
-    // Inline for safety.
-
-    const dateFilter: any = {}
-    if (filters.ano && filters.ano !== '0') {
-        const startYear = new Date(`${filters.ano}-01-01`)
-        const endYear = new Date(`${filters.ano}-12-31T23:59:59`)
-        dateFilter.gte = startYear
-        dateFilter.lte = endYear
-
-        if (filters.mes && filters.mes !== '0') {
-            const monthIndex = Number(filters.mes) - 1
-            const startMonth = new Date(Number(filters.ano), monthIndex, 1)
-            const endMonth = new Date(Number(filters.ano), monthIndex + 1, 0, 23, 59, 59)
-            dateFilter.gte = startMonth
-            dateFilter.lte = endMonth
-        } else if (filters.semestre) {
-            const isFirst = filters.semestre === '1'
-            const startMonth = new Date(Number(filters.ano), isFirst ? 0 : 6, 1)
-            const endMonth = new Date(Number(filters.ano), isFirst ? 5 : 11 + 1, 0, 23, 59, 59)
-            dateFilter.gte = startMonth
-            dateFilter.lte = endMonth
-        }
-        where.dataVenda = dateFilter
-    } else if (filters.mes && filters.mes !== '0') {
-        const currentYear = new Date().getFullYear()
-        const monthIndex = Number(filters.mes) - 1
-        const startMonth = new Date(currentYear, monthIndex, 1)
-        const endMonth = new Date(currentYear, monthIndex + 1, 0, 23, 59, 59)
-        where.dataVenda = { gte: startMonth, lte: endMonth }
-    } else {
-        // Default to current month if NO filters? Or all time?
-        // getKPIData usually wants specific period. 
-        // If empty filters, let's default to CURRENT MONTH like the original code did.
-        const now = new Date()
-        const startMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-        where.dataVenda = { gte: startMonth, lte: endMonth }
-    }
-
-    if (filters.consultor) where.consultorNome = { equals: filters.consultor, mode: 'insensitive' }
-    if (filters.administradora) where.administradora = { equals: filters.administradora, mode: 'insensitive' }
+    const where = buildWhereClause(filters)
 
     const aggregations = await prisma.sale.aggregate({
         _sum: {
