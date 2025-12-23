@@ -9,14 +9,20 @@ export async function getUsersAction(): Promise<UserProfile[]> {
         orderBy: { name: 'asc' }
     })
 
-    return users.map(user => ({
-        id: user.id,
-        sheetName: user.name,
-        displayName: user.name,
-        photoUrl: user.photoUrl || undefined,
-        createdAt: new Date().toISOString(), // DB might not have createdAt mapped in schema, fallback
-        updatedAt: new Date().toISOString()
-    }))
+    return users.map(user => {
+        let optimizedPhotoUrl = undefined
+        if (user.photoUrl) {
+            optimizedPhotoUrl = `/api/avatar/${user.id}`
+        }
+        return {
+            id: user.id,
+            sheetName: user.name, // Name matches "Nome na Planilha"
+            displayName: user.name, // In future, if schema adds displayName, use it
+            photoUrl: optimizedPhotoUrl,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }
+    })
 }
 
 export async function createUserAction(data: { sheetName: string; displayName: string; photoUrl?: string }) {

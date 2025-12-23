@@ -88,18 +88,12 @@ async function getRankingData(filters: FilterParams = {}) {
         }
     })
 
-    // Fetch users to get photos
-    const users = await prisma.user.findMany({
-        select: { name: true, photoUrl: true }
-    })
-
-    // Map photos to ranking
+    // Map to ranking (Lightweight payload - No photos)
     const ranking = salesByConsultant.map((item: any, index: number) => {
-        const user = users.find((u: any) => u.name.toLowerCase() === item.consultorNome.toLowerCase())
         return {
             rank: index + 1,
             name: item.consultorNome,
-            photoUrl: user?.photoUrl || null,
+            // photoUrl is handled by the frontend via getUsers() map
             totalVendido: Number(item._sum.valorLiquido || 0),
             totalBruto: Number(item._sum.valorBruto || 0),
             volumeVendas: item._count.id
@@ -195,16 +189,34 @@ async function getKPIData(filters: FilterParams = {}) {
 }
 
 export async function getUsers() {
+    // Select ID as well now
     const users = await prisma.user.findMany({
-        select: { name: true, photoUrl: true }
+        select: { id: true, name: true, photoUrl: true }
     })
+
     // Map to format expected by frontend { sheetName: ..., displayName: ... }
-    // Assuming name is the common key.
-    return users.map((u: any) => ({
-        sheetName: u.name,
-        displayName: u.name, // Or proper casing if needed
-        photoUrl: u.photoUrl
-    }))
+    return users.map((u: any) => {
+        let optimizedPhotoUrl = null
+
+        if (u.photoUrl) {
+            // If it's already a short URL (cloud storage) we could keep it, 
+            // but to unify cache strategy, we can route EVERYTHING through our API if we want.
+            // However, redirecting external URLs is an extra hop.
+            // Strategy: If it starts with 'data:', convert to API route.
+            // If it's 'http', keep it or proxy it.
+            // The User's request implies we serve via API route to hide complexity and handle base64.
+            // Let's route ALL photos via our API for consistency, OR just base64.
+            // The prompt said: "Se o usuário tiver foto no banco... deve ser retornado como ... /api/avatar/${user.id}"
+            // Implementation:
+            optimizedPhotoUrl = `/api/avatar/${u.id}`
+        }
+
+        return {
+            sheetName: u.name,
+            displayName: u.name, // Or proper casing if needed
+            photoUrl: optimizedPhotoUrl
+        }
+    })
 }
 
 export async function getFiltersData() {
