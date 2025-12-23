@@ -433,6 +433,5 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
                 </div>
             </div>
         </div>
-        </div >
     )
 }

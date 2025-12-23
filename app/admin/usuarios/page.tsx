@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, Search, Edit, Trash2, User, Loader2 } from "lucide-react"
 import { UserFormModal } from "@/components/admin/user-form-modal"
 import { DeleteConfirmationModal } from "@/components/admin/delete-confirmation-modal"
-import { DeleteConfirmationModal } from "@/components/admin/delete-confirmation-modal"
+
 import { getUsersAction, deleteUserAction } from "@/app/actions/user-actions"
 import type { UserProfile } from "@/lib/types"
 
