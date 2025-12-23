@@ -9,6 +9,7 @@ type FilterParams = {
     ano?: string
     consultor?: string
     administradora?: string
+    semestre?: string
 }
 
 async function getRankingData(filters: FilterParams = {}) {
@@ -233,7 +234,28 @@ export async function getFiltersData() {
 // Given the requirements, direct DB calls are fine for small scale. 
 // But let's keep it simple and just export the functions directly.
 
-export const getRanking = getRankingData
-export const getRecentSales = getRecentSalesData
-export const getStats = getKPIData // renamed/mapped
+// Cached Exports
+export const getRanking = async (filters: FilterParams = {}) => {
+    return await unstable_cache(
+        async () => getRankingData(filters),
+        [`ranking-data-${JSON.stringify(filters)}`], // Validate cache based on filters
+        { tags: ['dashboard-data'], revalidate: 3600 }
+    )()
+}
+
+export const getRecentSales = async (limit = 10) => {
+    return await unstable_cache(
+        async () => getRecentSalesData(limit),
+        [`recent-sales-${limit}`],
+        { tags: ['dashboard-data'], revalidate: 3600 }
+    )()
+}
+
+export const getStats = async (filters: FilterParams = {}) => {
+    return await unstable_cache(
+        async () => getKPIData(filters),
+        [`kpi-data-${JSON.stringify(filters)}`],
+        { tags: ['dashboard-data'], revalidate: 3600 }
+    )()
+}
 

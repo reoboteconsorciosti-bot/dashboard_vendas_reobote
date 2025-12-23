@@ -49,7 +49,12 @@ export default function TVRankingPage() {
       // I will need to assume the file has been updated with imports at the top.
       const { getRanking, getUsers } = await import("@/app/actions/dashboard-actions")
 
-      const usersData = await getUsers()
+      const [usersData, rankingMes, rankingAno] = await Promise.all([
+        getUsers(),
+        getRanking({ mes: currentMonth.toString(), ano: currentYear.toString() }),
+        getRanking({ ano: currentYear.toString() })
+      ])
+
       const profilesMap = usersData.reduce(
         (
           acc: Record<string, { displayName: string; photoUrl?: string }>,
@@ -61,17 +66,6 @@ export default function TVRankingPage() {
         {},
       )
       setUserProfiles(profilesMap)
-
-      // Use Server Action with filters
-      const ranking = await getRanking({ mes: currentMonth.toString(), ano: currentYear.toString() })
-
-      const totalAnual = ranking.reduce((sum: number, v: any) => sum + v.totalBruto, 0) // Na verdade totalBruto seria vendas anual? 
-      // Preciso de Vendas Anual TOTAL. O getRanking retorna dados filtrados pelo MES.
-      // Então getRanking({ mes... }) retorna só vendas do mês.
-      // Preciso de DUAS chamadas: uma pro mês e uma pro ano.
-
-      const rankingMes = ranking
-      const rankingAno = await getRanking({ ano: currentYear.toString() })
 
       const totalAnualValor = rankingAno.reduce((sum: number, v: any) => sum + v.totalVendido, 0) // totalVendido é liquido, totalBruto é bruto.
       // User code used 'totalAnual' from API which summed 'valorBruto'.
