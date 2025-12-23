@@ -13,6 +13,9 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
+ARG DATABASE_URL
+ARG N8N_WEBHOOK_TOKEN
+
 FROM base AS builder
 WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
