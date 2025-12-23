@@ -141,8 +141,8 @@ export default function UsuariosPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg tracking-tight truncate">{user.displayName}</h3>
-                    <p className="text-sm text-muted-foreground truncate" title={user.sheetName}>
-                      Planilha: {user.sheetName}
+                    <p className="text-sm text-muted-foreground truncate" title={user.sheetName.toUpperCase()}>
+                      Planilha: {user.sheetName.toUpperCase()}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Atualizado em {new Date(user.updatedAt).toLocaleDateString("pt-BR")}

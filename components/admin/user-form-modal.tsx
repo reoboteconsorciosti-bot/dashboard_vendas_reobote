@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState, useRef, type ChangeEvent } from "react"
+import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +22,19 @@ export function UserFormModal({ isOpen, onClose, onSuccess, editingUser }: UserF
     photoUrl: editingUser?.photoUrl || "",
   })
   const [previewUrl, setPreviewUrl] = useState(editingUser?.photoUrl || "")
+
+  // Reset/Update form when editingUser changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        sheetName: editingUser?.sheetName?.toUpperCase() || "",
+        displayName: editingUser?.displayName || "",
+        photoUrl: editingUser?.photoUrl || "",
+      })
+      setPreviewUrl(editingUser?.photoUrl || "")
+      setError("")
+    }
+  }, [isOpen, editingUser])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -128,7 +140,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, editingUser }: UserF
             <Input
               id="sheetName"
               value={formData.sheetName}
-              onChange={(e) => setFormData({ ...formData, sheetName: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, sheetName: e.target.value.toUpperCase() })}
               placeholder="Nome exato como aparece na planilha"
               required
               disabled={!!editingUser}

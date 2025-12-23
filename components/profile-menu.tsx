@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
 
 export function ProfileMenu() {
   const [theme, setTheme] = useState<"light" | "dark">("light")
@@ -44,7 +45,7 @@ export function ProfileMenu() {
         <Button
           variant="ghost"
           size="icon"
-          className="fixed bottom-6 left-6 z-50 h-9 w-9 rounded-full bg-card/60 backdrop-blur-sm border border-border/30 hover:bg-accent hover:border-border transition-all duration-200 shadow-md hover:shadow-lg opacity-50 hover:opacity-100"
+          className="fixed bottom-6 left-6 z-[100] h-9 w-9 rounded-full bg-card/60 backdrop-blur-sm border border-border/30 hover:bg-accent hover:border-border transition-all duration-200 shadow-md hover:shadow-lg opacity-50 hover:opacity-100"
         >
           <UserIcon className="h-4 w-4" />
         </Button>
@@ -57,24 +58,32 @@ export function ProfileMenu() {
         <DropdownMenuLabel className="font-semibold">Menu Principal</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem onClick={() => router.push("/")} className="cursor-pointer">
-          <LayoutDashboard className="mr-2 h-4 w-4" />
-          <span>Dashboard</span>
+        <DropdownMenuItem asChild>
+          <Link href="/" className="cursor-pointer flex items-center">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            <span>Dashboard</span>
+          </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => router.push("/tv-ranking")} className="cursor-pointer">
-          <Tv className="mr-2 h-4 w-4" />
-          <span>Ranking TV</span>
+        <DropdownMenuItem asChild>
+          <Link href="/tv-ranking" className="cursor-pointer flex items-center">
+            <Tv className="mr-2 h-4 w-4" />
+            <span>Ranking TV</span>
+          </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => router.push("/analytics")} className="cursor-pointer">
-          <TrendingUp className="mr-2 h-4 w-4" />
-          <span>Analytics</span>
+        <DropdownMenuItem asChild>
+          <Link href="/analytics" className="cursor-pointer flex items-center">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            <span>Analytics</span>
+          </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => router.push("/admin/usuarios")} className="cursor-pointer">
-          <UserIcon className="mr-2 h-4 w-4" />
-          <span>Usuários</span>
+        <DropdownMenuItem asChild>
+          <Link href="/admin/usuarios" className="cursor-pointer flex items-center">
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span>Usuários</span>
+          </Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
