@@ -3,6 +3,7 @@ import { TVRankingClient } from "@/components/tv-ranking-client"
 import type { DashboardData } from "@/components/tv-ranking-client"
 
 // This is a Server Component by default
+export const dynamic = "force-dynamic"
 export default async function TVRankingPage() {
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
