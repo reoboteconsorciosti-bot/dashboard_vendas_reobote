@@ -74,27 +74,34 @@ export async function POST(request: Request) {
     for (let index = 0; index < payload.vendas.length; index++) {
       const venda = payload.vendas[index];
       try {
-        const mesAnoParseado = parseMesAno(venda.mes_ano)
-        if (!mesAnoParseado) throw new Error(`mes_ano inválido: ${venda.mes_ano}`)
+        // Support flexible keys (n8n might send with spaces or underscores)
+        const brutoKey = venda.valor_bruto !== undefined ? venda.valor_bruto : venda["valor bruto"]
+        const liquidoKey = venda.valor_liquido !== undefined ? venda.valor_liquido : venda["valor liquido"]
+        const consultorKey = venda.consultor !== undefined ? venda.consultor : venda["consultor nome"]
+        const dataVendaKey = venda.data_venda !== undefined ? venda.data_venda : venda["data venda"]
+        const mesAnoKey = venda.mes_ano !== undefined ? venda.mes_ano : venda["mes ano"]
 
-        const dataVendaISO = parseDataVenda(venda.data_venda)
-        if (!dataVendaISO) throw new Error(`data_venda inválida: ${venda.data_venda}`)
+        const mesAnoParseado = parseMesAno(mesAnoKey)
+        if (!mesAnoParseado) throw new Error(`mes_ano inválido: ${mesAnoKey}`)
 
-        const valorBruto = parseValor(venda.valor_bruto)
-        const valorLiquido = parseValor(venda.valor_liquido)
+        const dataVendaISO = parseDataVenda(dataVendaKey)
+        if (!dataVendaISO) throw new Error(`data_venda inválida: ${dataVendaKey}`)
 
-        if (!venda.consultor?.trim()) throw new Error("consultor obrigatório")
+        const valorBruto = parseValor(brutoKey)
+        const valorLiquido = parseValor(liquidoKey)
+
+        if (!consultorKey?.trim()) throw new Error("consultor obrigatório")
         if (!venda.administradora?.trim()) throw new Error("administradora obrigatória")
 
         // Create in Database
         const createdSale = await prisma.sale.create({
           data: {
-            consultorNome: venda.consultor.trim(),
+            consultorNome: consultorKey.trim(),
             administradora: venda.administradora.trim(),
             valorLiquido: valorLiquido,
             valorBruto: valorBruto,
             dataVenda: new Date(dataVendaISO),
-            mesCompetencia: venda.mes_ano,
+            mesCompetencia: mesAnoKey,
           }
         })
 
