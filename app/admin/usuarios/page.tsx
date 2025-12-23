@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Plus, Search, Edit, Trash2, User, Loader2 } from "lucide-react"
 import { UserFormModal } from "@/components/admin/user-form-modal"
 import { DeleteConfirmationModal } from "@/components/admin/delete-confirmation-modal"
-import { ProfileMenu } from "@/components/profile-menu"
-import { BackButton } from "@/components/back-button"
+import { DeleteConfirmationModal } from "@/components/admin/delete-confirmation-modal"
 import { getUsersAction, deleteUserAction } from "@/app/actions/user-actions"
 import type { UserProfile } from "@/lib/types"
+
+import { DashboardShell } from "@/components/dashboard-shell"
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
@@ -71,10 +72,7 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-cyan-ultra-light">
-      <ProfileMenu />
-      <BackButton />
-
+    <DashboardShell>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8 space-y-6">
           <div>
@@ -186,6 +184,6 @@ export default function UsuariosPage() {
         onConfirm={handleDeleteConfirm}
         userName={deletingUser?.displayName || ""}
       />
-    </div>
+    </DashboardShell>
   )
 }

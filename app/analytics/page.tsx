@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ProfileMenu } from "@/components/profile-menu"
-import { BackButton } from "@/components/back-button"
+
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, TrendingUp, DollarSign, Target, Sparkles, X, ChevronRight, Crown } from "lucide-react"
+import { Calendar, TrendingUp, DollarSign, Target, Sparkles, X, ChevronRight } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import type { DashboardFilters, DashboardStats, VendedorRanking } from "@/lib/types"
+
+import { DashboardShell } from "@/components/dashboard-shell"
 
 export default function AnalyticsPage() {
   const [filters, setFilters] = useState<DashboardFilters>({ mes: "0", ano: "0" })
@@ -139,10 +140,7 @@ export default function AnalyticsPage() {
   ].filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <ProfileMenu />
-      <BackButton />
-
+    <DashboardShell>
       <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
         <div className="space-y-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -463,88 +461,6 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            {ranking.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 items-end max-w-4xl mx-auto pt-4">
-                {/* 2nd Place */}
-                {ranking[1] && (
-                  <div className="order-2 md:order-1 flex flex-col items-center">
-                    <div className="relative mb-3 group">
-                      <div className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-slate-300 shadow-xl overflow-hidden bg-background relative z-10 group-hover:scale-105 transition-transform">
-                        {ranking[1].foto ? (
-                          <img src={ranking[1].foto} alt={ranking[1].consultorNome} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-2xl">
-                            {ranking[1].consultorNome.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1 rounded-full shadow-md z-20 border-2 border-background">
-                        2º Lugar
-                      </div>
-                    </div>
-                    <div className="text-center mt-2">
-                      <p className="font-bold text-sm md:text-base line-clamp-1">{ranking[1].consultorNome}</p>
-                      <p className="text-slate-500 font-bold text-sm">{formatCompact(ranking[1].valorLiquido)}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* 1st Place */}
-                {ranking[0] && (
-                  <div className="order-1 md:order-2 flex flex-col items-center -mt-8 md:-mt-12">
-                    <div className="relative mb-4 group">
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-0 animate-bounce">
-                        <Crown className="w-10 h-10 text-yellow-400 drop-shadow-lg fill-yellow-400" />
-                      </div>
-                      <div className="w-32 h-32 md:w-36 md:h-36 rounded-full border-[5px] border-yellow-400 shadow-2xl shadow-yellow-400/20 overflow-hidden bg-background relative z-10 group-hover:scale-110 transition-transform duration-300">
-                        {ranking[0].foto ? (
-                          <img src={ranking[0].foto} alt={ranking[0].consultorNome} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-yellow-50 text-yellow-600 font-bold text-4xl">
-                            {ranking[0].consultorNome.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg z-20 border-[3px] border-background flex items-center gap-1">
-                        <Crown className="w-3 h-3 fill-white/80" /> 1º Lugar
-                      </div>
-                    </div>
-                    <div className="text-center mt-3 p-3 bg-gradient-to-b from-yellow-500/10 to-transparent rounded-2xl w-full">
-                      <p className="font-bold text-lg md:text-xl line-clamp-1 text-foreground">{ranking[0].consultorNome}</p>
-                      <p className="text-yellow-600 dark:text-yellow-500 font-bold text-base md:text-lg">{formatCompact(ranking[0].valorLiquido)}</p>
-                      <Badge variant="secondary" className="mt-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200 border-yellow-200/50">
-                        {ranking[0].totalVendas} Vendas
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3rd Place */}
-                {ranking[2] && (
-                  <div className="order-3 flex flex-col items-center">
-                    <div className="relative mb-3 group">
-                      <div className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-amber-600 shadow-xl overflow-hidden bg-background relative z-10 group-hover:scale-105 transition-transform">
-                        {ranking[2].foto ? (
-                          <img src={ranking[2].foto} alt={ranking[2].consultorNome} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-amber-50 text-amber-700 font-bold text-2xl">
-                            {ranking[2].consultorNome.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-20 border-2 border-background">
-                        3º Lugar
-                      </div>
-                    </div>
-                    <div className="text-center mt-2">
-                      <p className="font-bold text-sm md:text-base line-clamp-1">{ranking[2].consultorNome}</p>
-                      <p className="text-amber-700 dark:text-amber-600 font-bold text-sm">{formatCompact(ranking[2].valorLiquido)}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             <Card className="overflow-hidden shadow-md border-border/50">
               <div className="p-4 border-b bg-muted/50">
                 <h2 className="font-semibold">Ranking de Vendedores</h2>
@@ -573,34 +489,21 @@ export default function AnalyticsPage() {
                           </div>
                         </td>
                         <td className="p-3">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <div className="w-16 h-16 -my-3 rounded-full bg-gradient-to-br from-primary/20 via-background to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border-4 border-background shadow-xl hover:scale-110 transition-transform duration-300 relative z-10">
-                                {vendedor.foto ? (
-                                  <img
-                                    src={vendedor.foto || "/placeholder.svg"}
-                                    alt={vendedor.consultorNome}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-lg font-bold text-primary">
-                                    {vendedor.consultorNome.charAt(0).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                              {index < 3 && (
-                                <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-background shadow-sm z-20 ${index === 0 ? "bg-yellow-400 text-yellow-900" :
-                                  index === 1 ? "bg-slate-300 text-slate-800" :
-                                    "bg-amber-600 text-amber-100"
-                                  }`}>
-                                  {index + 1}
-                                </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {vendedor.foto ? (
+                                <img
+                                  src={vendedor.foto || "/placeholder.svg"}
+                                  alt={vendedor.consultorNome}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-sm font-bold text-primary">
+                                  {vendedor.consultorNome.charAt(0).toUpperCase()}
+                                </span>
                               )}
                             </div>
-                            <div className="flex flex-col">
-                              <span className="font-bold text-base text-foreground/90">{vendedor.consultorNome}</span>
-                              {index === 0 && <span className="text-[10px] uppercase font-bold text-yellow-500 tracking-wider">Líder do Mês 👑</span>}
-                            </div>
+                            <span className="font-medium text-sm">{vendedor.consultorNome}</span>
                           </div>
                         </td>
                         <td className="p-3 text-right text-sm hidden md:table-cell text-muted-foreground">
@@ -619,6 +522,6 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardShell>
   )
 }

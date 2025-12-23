@@ -87,7 +87,7 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
                 },
                 prospeccao: totalVendasCount * 10,
                 quentes: Math.floor(totalVendasCount * 0.15),
-                ranking: rankingMes.slice(0, 3).map((r: any) => ({
+                ranking: rankingMes.map((r: any) => ({
                     ...r,
                     consultorNome: profilesMap[r.name]?.displayName || r.name,
                     foto: profilesMap[r.name]?.photoUrl,
@@ -376,18 +376,63 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
                         )}
                     </div>
                 </div>
+            </div>
 
-                <div
-                    className="flex items-center justify-between mt-16 pt-8 border-t border-border/30 text-muted-foreground animate-fade-in-up"
-                    style={{ animationDelay: "0.35s" }}
-                >
-                    <p className="text-xs tracking-wide">Sincronização: n8n + Google Sheets</p>
-                    <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-success animate-pulse-subtle shadow-sm" />
-                        <p className="text-sm font-mono tracking-tight">{currentTime.toLocaleTimeString("pt-BR")}</p>
+            {/* Full Ranking List with Pop-out Effect */}
+            {data.ranking.length > 3 && (
+                <div className="space-y-6 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+                    <h2 className="text-2xl font-semibold tracking-tight px-2">Demais Colocados</h2>
+                    <div className="grid grid-cols-1 gap-4">
+                        {data.ranking.slice(3).map((vendedor, index) => (
+                            <Card key={vendedor.consultorNome} className="p-4 bg-card/60 backdrop-blur-sm border border-border/50 hover:bg-card/80 transition-all flex items-center justify-between group overflow-visible z-0 hover:z-10 relative">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-lg font-bold text-muted-foreground">
+                                        {index + 4}
+                                    </div>
+
+                                    {/* Pop-out Avatar */}
+                                    <div className="relative">
+                                        <div className="w-20 h-20 -my-6 rounded-full bg-gradient-to-br from-primary/20 via-background to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border-4 border-background shadow-xl group-hover:scale-110 transition-transform duration-300 relative z-10">
+                                            {vendedor.foto ? (
+                                                <img
+                                                    src={vendedor.foto || "/placeholder.svg"}
+                                                    alt={vendedor.consultorNome}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-xl font-bold text-primary">
+                                                    {vendedor.consultorNome.charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-xl text-foreground/90">{vendedor.consultorNome}</span>
+                                        <span className="text-sm text-muted-foreground">{vendedor.totalVendas} vendas</span>
+                                    </div>
+                                </div>
+
+                                <div className="text-right">
+                                    <p className="text-xl font-bold font-mono tracking-tight">{formatCompact(vendedor.valorLiquido)}</p>
+                                </div>
+                            </Card>
+                        ))}
                     </div>
+                </div>
+            )}
+
+            <div
+                className="flex items-center justify-between mt-16 pt-8 border-t border-border/30 text-muted-foreground animate-fade-in-up"
+                style={{ animationDelay: "0.35s" }}
+            >
+                <p className="text-xs tracking-wide">Sincronização: n8n + Google Sheets</p>
+                <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-success animate-pulse-subtle shadow-sm" />
+                    <p className="text-sm font-mono tracking-tight">{currentTime.toLocaleTimeString("pt-BR")}</p>
                 </div>
             </div>
         </div>
+        </div >
     )
 }

@@ -2,13 +2,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, BarChart3, Trophy, User } from "lucide-react"
-import { ProfileMenu } from "@/components/profile-menu"
+import { DashboardShell } from "@/components/dashboard-shell"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <ProfileMenu />
-
+    <DashboardShell>
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-5xl font-bold tracking-tight text-balance">Dashboard de Vendas</h1>
@@ -90,6 +88,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardShell>
   )
 }
