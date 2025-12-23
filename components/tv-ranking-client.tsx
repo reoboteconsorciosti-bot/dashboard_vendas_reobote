@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Crown, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import type { VendedorRanking } from "@/lib/types"
 
 export interface DashboardData {
@@ -153,14 +154,14 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
             </div>
 
             <div className="fixed bottom-6 left-6 z-50">
-                <Button
-                    onClick={() => router.push("/")}
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full bg-destructive/10 hover:bg-destructive/20 border border-destructive/20 hover:border-destructive/40 text-destructive transition-all duration-200 opacity-30 hover:opacity-100"
-                >
-                    <LogOut className="w-4 h-4" />
-                </Button>
+                <Link href="/" passHref>
+                    <Button
+                        size="icon"
+                        className="h-10 w-10 rounded-full bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-lg border-2 border-background/20 transition-all duration-200 hover:scale-105"
+                    >
+                        <LogOut className="w-5 h-5 ml-0.5" />
+                    </Button>
+                </Link>
             </div>
 
             <div className="relative max-w-[1920px] mx-auto px-16 py-12">
