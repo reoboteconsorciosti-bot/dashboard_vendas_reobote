@@ -210,6 +210,26 @@ export async function POST(request: Request) {
     })
 
     // 6. DB Persistence
+    // 6.1 Idempotency Check (Prevent Duplicates)
+    const existingSale = await prisma.sale.findFirst({
+      where: {
+        consultorNome: String(consultor).trim(),
+        valorLiquido: valorLiquido,
+        valorBruto: valorBruto,
+        administradora: String(administradora).trim(),
+        dataVenda: dataVenda,
+      }
+    })
+
+    if (existingSale) {
+      console.log(`[Webhook ${PROCESS_ID}] DUPLICATE DETECTED. Skipping creation. ID: ${existingSale.id}`)
+      return NextResponse.json({
+        success: true,
+        id: existingSale.id,
+        message: "Venda já existente (Skipped)"
+      })
+    }
+
     const sale = await prisma.sale.create({
       data: {
         consultorNome: String(consultor).trim(),

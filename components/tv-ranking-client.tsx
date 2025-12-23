@@ -67,12 +67,13 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
             )
 
             const totalAnualBruto = rankingAno.reduce((sum: number, v: any) => sum + v.totalBruto, 0)
+            const totalAnualLiquido = rankingAno.reduce((sum: number, v: any) => sum + v.totalVendido, 0)
             const totalMesLiquido = rankingMes.reduce((sum: number, v: any) => sum + v.totalVendido, 0)
             const totalVendasCount = rankingMes.reduce((sum: number, v: any) => sum + v.volumeVendas, 0)
 
             setData({
-                vendasAnual: totalAnualBruto,
-                vendasAnualCotas: 0,
+                vendasAnual: totalAnualLiquido, // Net
+                vendasAnualCotas: totalAnualBruto, // Gross
                 vendasMes: totalMesLiquido,
                 mesAtual: currentDate.toLocaleDateString("pt-BR", { month: "long" }),
                 churrascometro: totalAnualBruto > 0 ? Math.min((totalMesLiquido / 1500000) * 100, 100) : 0,
@@ -168,14 +169,14 @@ export function TVRankingClient({ initialData }: TVRankingClientProps) {
                 <div className="grid grid-cols-2 gap-8 mb-10 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
                     <Card className="p-10 bg-card/60 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="space-y-3">
-                            <p className="text-sm font-semibold text-muted-foreground tracking-[0.15em] uppercase">Vendas Anual</p>
+                            <p className="text-sm font-semibold text-muted-foreground tracking-[0.15em] uppercase">Vendas Líquidas Anuais</p>
                             <p className="text-display font-bold tracking-tight">{formatCompact(data.vendasAnual)}</p>
                         </div>
                     </Card>
                     <Card className="p-10 bg-card/60 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="space-y-3">
                             <p className="text-sm font-semibold text-muted-foreground tracking-[0.15em] uppercase">
-                                Vendas Anual Cotas
+                                Vendas Brutas Anuais
                             </p>
                             <p className="text-display font-bold tracking-tight">{formatCompact(data.vendasAnualCotas)}</p>
                         </div>

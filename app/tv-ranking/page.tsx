@@ -29,13 +29,14 @@ export default async function TVRankingPage() {
   )
 
   const totalAnualBruto = rankingAno.reduce((sum: number, v: any) => sum + v.totalBruto, 0)
+  const totalAnualLiquido = rankingAno.reduce((sum: number, v: any) => sum + v.totalVendido, 0)
   const totalMesLiquido = rankingMes.reduce((sum: number, v: any) => sum + v.totalVendido, 0)
   const totalVendasCount = rankingMes.reduce((sum: number, v: any) => sum + v.volumeVendas, 0)
 
   // Initial Payload
   const initialData: DashboardData = {
-    vendasAnual: totalAnualBruto,
-    vendasAnualCotas: 0,
+    vendasAnual: totalAnualLiquido, // Now displays Net (Liquido)
+    vendasAnualCotas: totalAnualBruto, // Now displays Gross (Bruto)
     vendasMes: totalMesLiquido,
     mesAtual: currentDate.toLocaleDateString("pt-BR", { month: "long" }),
     churrascometro: totalAnualBruto > 0 ? Math.min((totalMesLiquido / 1500000) * 100, 100) : 0,
