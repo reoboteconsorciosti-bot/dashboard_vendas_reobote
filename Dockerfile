@@ -1,38 +1,19 @@
 FROM node:20-alpine AS base
 
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-
+# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-ARG DATABASE_URL
-ARG N8N_WEBHOOK_TOKEN
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+# Force install of ALL dependencies (including dev) to ensure prisma CLI exists
+RUN npm install
 
-RUN apk add --no-cache openssl libc6-compat
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client explicitly
 RUN npx prisma generate
 
-# Next.js build
-RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  elif [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Build Next.js
+RUN npm run build
 
 FROM base AS runner
 WORKDIR /app
