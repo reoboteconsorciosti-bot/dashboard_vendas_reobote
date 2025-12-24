@@ -1,6 +1,7 @@
 'use server'
 
 import prisma from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { unstable_cache } from "next/cache"
 
 // Types
@@ -201,10 +202,8 @@ export async function getFiltersData() {
     })
 
     return {
-        return {
-            consultores: consultants.map((c) => c.consultorNome),
-            administradoras: adms.map((a) => a.administradora)
-        }
+        consultores: consultants.map((c) => c.consultorNome),
+        administradoras: adms.map((a) => a.administradora)
     }
 }
 
