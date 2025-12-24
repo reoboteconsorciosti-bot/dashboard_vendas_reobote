@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Moon, Sun, LayoutDashboard, TrendingUp, UserIcon, Tv } from "lucide-react"
+import { Moon, Sun, LayoutDashboard, TrendingUp, UserIcon, Tv, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -83,6 +83,13 @@ export function ProfileMenu() {
           <Link href="/admin/usuarios" className="cursor-pointer flex items-center">
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Usuários</span>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href="/admin/auditoria" className="cursor-pointer flex items-center text-destructive focus:text-destructive">
+            <Database className="mr-2 h-4 w-4" />
+            <span>Auditoria de Dados</span>
           </Link>
         </DropdownMenuItem>
 

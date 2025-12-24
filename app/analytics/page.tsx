@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardShell>
-      <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
+      <div className="container mx-auto px-6 md:px-4 py-6 pt-10 md:pt-6 space-y-6 max-w-7xl">
         <div className="space-y-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1.5">
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="w-full sm:max-w-md border-l border-primary/20 bg-background/95 backdrop-blur-xl p-0 flex flex-col h-full shadow-2xl">
+            <SheetContent side="right" className="w-full sm:max-w-md border-l border-primary/20 bg-background/95 backdrop-blur-xl p-0 flex flex-col h-full shadow-2xl [&>button]:hidden">
               <SheetHeader className="px-6 py-5 border-b border-border/40 bg-muted/10 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -416,7 +416,7 @@ export default function AnalyticsPage() {
                       <DollarSign className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Bruto</p>
                     </div>
-                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalBruto)}>
+                    <p className="text-3xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold tracking-tight break-words leading-tight" title={formatCompact(stats.totalBruto)}>
                       {formatCompact(stats.totalBruto)}
                     </p>
                   </div>
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
                       <TrendingUp className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Líquido</p>
                     </div>
-                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight text-success truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalLiquido)}>
+                    <p className="text-3xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold tracking-tight text-success break-words leading-tight" title={formatCompact(stats.totalLiquido)}>
                       {formatCompact(stats.totalLiquido)}
                     </p>
                   </div>
@@ -440,7 +440,7 @@ export default function AnalyticsPage() {
                       <Target className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Vendas</p>
                     </div>
-                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible">{stats.totalVendas}</p>
+                    <p className="text-3xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold tracking-tight break-words leading-tight">{stats.totalVendas}</p>
                   </div>
                 </Card>
 
@@ -450,7 +450,7 @@ export default function AnalyticsPage() {
                       <Calendar className="w-4 h-4" />
                       <p className="text-xs font-medium">Ticket Médio</p>
                     </div>
-                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalLiquido / stats.totalVendas)}>
+                    <p className="text-3xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold tracking-tight break-words leading-tight" title={formatCompact(stats.totalLiquido / stats.totalVendas)}>
                       {formatCompact(stats.totalLiquido / stats.totalVendas)}
                     </p>
                   </div>
