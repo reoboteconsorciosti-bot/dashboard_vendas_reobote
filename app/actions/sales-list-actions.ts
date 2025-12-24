@@ -119,6 +119,8 @@ export async function getSalesList({
                 ...s,
                 valorBruto: Number(s.valorBruto),
                 valorLiquido: Number(s.valorLiquido),
+                dataVenda: s.dataVenda.toISOString(), // Ensure serializability
+                createdAt: s.createdAt.toISOString()
             })),
             totalPages: Math.ceil(total / limit),
             currentPage: page,

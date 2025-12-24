@@ -37,6 +37,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet"
+import { Eye, Clock } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -54,6 +62,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function SalesDataTable() {
     const { toast } = useToast()
+    const [selectedSale, setSelectedSale] = useState<any | null>(null)
     // Data States
     const [data, setData] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -170,6 +179,10 @@ export function SalesDataTable() {
         link.click()
     }
 
+    const handleViewDetails = (sale: any) => {
+        setSelectedSale(sale)
+    }
+
     return (
         <div className="space-y-6">
             {/* Stats Cards - "Million Dollar" Feature */}
@@ -270,33 +283,20 @@ export function SalesDataTable() {
                 <Table>
                     <TableHeader className="bg-muted/40">
                         <TableRow>
-                            <TableHead className="w-[120px]">
-                                <Button variant="ghost" size="sm" onClick={() => handleSort('dataVenda')} className="-ml-3 hover:bg-transparent hover:text-primary">
-                                    Data
-                                    <ArrowUpDown className="ml-2 h-3 w-3" />
-                                </Button>
-                            </TableHead>
-                            <TableHead>
-                                <Button variant="ghost" size="sm" onClick={() => handleSort('consultorNome')} className="-ml-3 hover:bg-transparent hover:text-primary">
-                                    Consultor
-                                    <ArrowUpDown className="ml-2 h-3 w-3" />
-                                </Button>
-                            </TableHead>
-                            <TableHead className="hidden md:table-cell">Administradora</TableHead>
+                            <TableHead className="w-[100px]">Data</TableHead>
+                            <TableHead>Consultor</TableHead>
+                            <TableHead className="hidden md:table-cell">Admin</TableHead>
                             <TableHead className="hidden md:table-cell">Contrato</TableHead>
-                            <TableHead className="text-right">
-                                <Button variant="ghost" size="sm" onClick={() => handleSort('valorLiquido')} className="-mr-3 hover:bg-transparent hover:text-primary">
-                                    Valor Líquido
-                                    <ArrowUpDown className="ml-2 h-3 w-3" />
-                                </Button>
-                            </TableHead>
-                            <TableHead className="text-right hidden sm:table-cell">Status</TableHead>
+                            <TableHead className="text-right">V. Líquido</TableHead>
+                            <TableHead className="text-right hidden sm:table-cell">V. Bruto</TableHead>
+                            <TableHead className="hidden lg:table-cell">Mês Comp.</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-40 text-center">
+                                <TableCell colSpan={8} className="h-40 text-center">
                                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground animate-pulse">
                                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                         <span>Carregando dados...</span>
@@ -305,40 +305,48 @@ export function SalesDataTable() {
                             </TableRow>
                         ) : data.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
+                                <TableCell colSpan={8} className="h-40 text-center text-muted-foreground">
                                     Nenhum registro encontrado com os filtros atuais.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             data.map((sale) => (
                                 <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors group">
-                                    <TableCell className="font-medium text-muted-foreground">
+                                    <TableCell className="font-medium text-muted-foreground text-xs">
                                         {format(new Date(sale.dataVenda), "dd/MM/yy")}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center text-[10px] font-bold text-primary ring-1 ring-background">
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center text-[10px] font-bold text-primary ring-1 ring-background">
                                                 {sale.consultorNome.charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="font-medium">{sale.consultorNome}</span>
+                                            <span className="font-medium text-sm truncate max-w-[120px]" title={sale.consultorNome}>{sale.consultorNome}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                                    <TableCell className="hidden md:table-cell text-muted-foreground text-xs truncate max-w-[100px]" title={sale.administradora}>
                                         {sale.administradora}
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
-                                        <div className="flex flex-col text-xs">
-                                            <span className="font-mono text-muted-foreground">G: {sale.grupo}</span>
-                                            <span className="font-mono text-muted-foreground">C: {sale.cota}</span>
+                                        <div className="flex flex-col text-[10px]">
+                                            <span className="font-mono text-muted-foreground">G:{sale.grupo}</span>
+                                            <span className="font-mono text-muted-foreground">C:{sale.cota}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-bold text-success">
+                                    <TableCell className="text-right font-bold text-success text-sm">
                                         {formatCurrency(sale.valorLiquido)}
                                     </TableCell>
-                                    <TableCell className="text-right hidden sm:table-cell">
-                                        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground bg-muted/50 border-border/50">
-                                            Validado
+                                    <TableCell className="text-right hidden sm:table-cell text-muted-foreground text-xs">
+                                        {formatCurrency(sale.valorBruto)}
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell">
+                                        <Badge variant="secondary" className="text-[10px] font-mono">
+                                            {sale.mesCompetencia}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => handleViewDetails(sale)}>
+                                            <Eye className="w-4 h-4" />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -376,6 +384,75 @@ export function SalesDataTable() {
                     </Button>
                 </div>
             </div>
+            {/* Details Sheet */}
+            <Sheet open={!!selectedSale} onOpenChange={(open) => !open && setSelectedSale(null)}>
+                <SheetContent className="w-[400px] sm:w-[540px]">
+                    <SheetHeader className="mb-6">
+                        <SheetTitle>Detalhes da Venda</SheetTitle>
+                        <SheetDescription>
+                            ID: <span className="font-mono text-xs">{selectedSale?.id}</span>
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    {selectedSale && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Data da Venda</p>
+                                    <p className="text-sm font-medium flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-primary" />
+                                        {format(new Date(selectedSale.dataVenda), "dd 'de' MMMM, yyyy", { locale: require('date-fns/locale/pt-BR') })}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Mês Competência</p>
+                                    <Badge variant="outline">{selectedSale.mesCompetencia}</Badge>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Consultor</p>
+                                    <p className="text-lg font-bold text-foreground">{selectedSale.consultorNome}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground">Administradora</p>
+                                        <p className="text-sm">{selectedSale.administradora}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground">Contrato (G/C)</p>
+                                        <p className="text-sm font-mono">{selectedSale.grupo} / {selectedSale.cota}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Card className="bg-primary/5 border-primary/20">
+                                    <CardContent className="p-4 space-y-1">
+                                        <p className="text-xs font-medium text-primary/80">Valor Líquido</p>
+                                        <p className="text-xl font-bold text-success">{formatCurrency(selectedSale.valorLiquido)}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4 space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground">Valor Bruto</p>
+                                        <p className="text-xl font-bold">{formatCurrency(selectedSale.valorBruto)}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div className="space-y-2 pt-4 border-t">
+                                <p className="text-xs font-medium text-muted-foreground">Metadados do Sistema</p>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground font-mono">
+                                    <span>Criado em:</span>
+                                    <span>{new Date(selectedSale.createdAt).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }
