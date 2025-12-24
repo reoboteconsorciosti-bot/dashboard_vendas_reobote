@@ -23,8 +23,8 @@ model Sale {
   valorBruto      Decimal  @db.Decimal(15, 2)
   dataVenda       DateTime
   mesCompetencia  String
-  cota            String   // Novo campo identificador
-  grupo           String   // Novo campo identificador
+  cota            String   @default("LEGADO") // Novo campo identificador
+  grupo           String   @default("LEGADO") // Novo campo identificador
   createdAt       DateTime @default(now())
 
   @@index([consultorNome])
