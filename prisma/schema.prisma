@@ -8,12 +8,20 @@ generator client {
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
+// Note: This model checks out with the production DB to avoid data loss.
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  photoUrl  String?
-  // Note: There might be other fields in the actual database, but we only map what we need.
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("USER")
+  teamId        String?
+  photoUrl      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
+
+
 
 model Sale {
   id              String   @id @default(uuid())
@@ -23,12 +31,12 @@ model Sale {
   valorBruto      Decimal  @db.Decimal(15, 2)
   dataVenda       DateTime
   mesCompetencia  String
-  cota            String   @default("LEGADO") // Novo campo identificador
-  grupo           String   @default("LEGADO") // Novo campo identificador
+  cota            String   @default("LEGADO")
+  grupo           String   @default("LEGADO")
   createdAt       DateTime @default(now())
 
   @@index([consultorNome])
   @@index([mesCompetencia])
   @@index([dataVenda])
-  @@unique([administradora, grupo, cota]) // Garante unicidade real da venda
+  @@unique([administradora, grupo, cota])
 }
