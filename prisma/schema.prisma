@@ -38,5 +38,6 @@ model Sale {
   @@index([consultorNome])
   @@index([mesCompetencia])
   @@index([dataVenda])
-  @@unique([administradora, grupo, cota])
+  // Removido @@unique para permitir multiplos registros LEGADO
+  @@index([administradora, grupo, cota]) 
 }
