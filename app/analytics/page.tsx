@@ -416,7 +416,7 @@ export default function AnalyticsPage() {
                       <DollarSign className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Bruto</p>
                     </div>
-                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate" title={formatCompact(stats.totalBruto)}>
+                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalBruto)}>
                       {formatCompact(stats.totalBruto)}
                     </p>
                   </div>
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
                       <TrendingUp className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Líquido</p>
                     </div>
-                    <p className="text-3xl lg:text-4xl font-bold tracking-tight text-success truncate" title={formatCompact(stats.totalLiquido)}>
+                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight text-success truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalLiquido)}>
                       {formatCompact(stats.totalLiquido)}
                     </p>
                   </div>
@@ -440,7 +440,7 @@ export default function AnalyticsPage() {
                       <Target className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Vendas</p>
                     </div>
-                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate">{stats.totalVendas}</p>
+                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible">{stats.totalVendas}</p>
                   </div>
                 </Card>
 
@@ -450,7 +450,7 @@ export default function AnalyticsPage() {
                       <Calendar className="w-4 h-4" />
                       <p className="text-xs font-medium">Ticket Médio</p>
                     </div>
-                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate" title={formatCompact(stats.totalLiquido / stats.totalVendas)}>
+                    <p className="text-2xl md:text-3xl xl:text-5xl font-bold tracking-tight truncate md:whitespace-normal md:overflow-visible" title={formatCompact(stats.totalLiquido / stats.totalVendas)}>
                       {formatCompact(stats.totalLiquido / stats.totalVendas)}
                     </p>
                   </div>
