@@ -23,9 +23,12 @@ model Sale {
   valorBruto      Decimal  @db.Decimal(15, 2)
   dataVenda       DateTime
   mesCompetencia  String
+  cota            String   // Novo campo identificador
+  grupo           String   // Novo campo identificador
   createdAt       DateTime @default(now())
 
   @@index([consultorNome])
   @@index([mesCompetencia])
   @@index([dataVenda])
+  @@unique([administradora, grupo, cota]) // Garante unicidade real da venda
 }

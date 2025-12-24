@@ -175,16 +175,24 @@ export async function POST(request: Request) {
     const valBrutoRaw = findValue(dataToProcess, ["valorBruto", "valor_bruto", "valor bruto"])
     const dataVendaRaw = findValue(dataToProcess, ["dataVenda", "data_venda", "data venda", "data"])
     const mesCompetenciaRaw = findValue(dataToProcess, ["mesCompetencia", "mes_competencia", "mes_ano", "mesCompetencia"])
+    const cota = findValue(dataToProcess, ["cota", "nr_cota", "numero_cota"])
+    const grupo = findValue(dataToProcess, ["grupo", "nr_grupo", "numero_grupo"])
 
     console.log(`[Webhook ${PROCESS_ID}] EXTRACTED VALUES:`, {
-      consultor, administradora, valLiqRaw, valBrutoRaw, dataVendaRaw, mesCompetenciaRaw
+      consultor, administradora, valLiqRaw, valBrutoRaw, dataVendaRaw, mesCompetenciaRaw, cota, grupo
     })
 
     // 5. Validation & Sanitization
-    if (!consultor || !administradora) {
+    if (!consultor || !administradora || !cota || !grupo) {
       const missing = []
-      if (!consultor) missing.push("consultor/consultorNome")
+      if (!consultor) missing.push("consultor")
       if (!administradora) missing.push("administradora")
+      if (!cota) missing.push("cota")
+      if (!grupo) missing.push("grupo")
+
+      // Permitir processar sem cota/grupo temporariamente (retrocompatibilidade) se o usuário desejar?
+      // Melhor não, o usuário quer consertar os dados. Vamos exigir.
+
       const msg = `Campos obrigatórios faltando: ${missing.join(", ")}`
       console.error(`[Webhook ${PROCESS_ID}] VALIDATION ERROR: ${msg}`)
       return NextResponse.json({ error: msg }, { status: 400 })
@@ -206,23 +214,28 @@ export async function POST(request: Request) {
       valorLiquido,
       valorBruto,
       dataVenda,
-      mesCompetencia
+      mesCompetencia,
+      cota,
+      grupo
     })
 
     // 6. DB Persistence
-    // 6.1 Idempotency Check (Prevent Duplicates)
+    // 6.1 Idempotency Check via Unique Key (Prisma/DB will handle race condition via CONSTRAINT, but we check to fail gracefuly)
+    // Opcional: Adicionar try/catch específico para erro P2002 (Unique constraint failed)
+
+    // Check manual antes (menos confiável em alta concorrência mas bom para log)
     const existingSale = await prisma.sale.findFirst({
       where: {
-        consultorNome: String(consultor).trim(),
-        valorLiquido: valorLiquido,
-        valorBruto: valorBruto,
-        administradora: String(administradora).trim(),
-        dataVenda: dataVenda,
+        AND: [
+          { administradora: String(administradora).trim() },
+          { grupo: String(grupo).trim() },
+          { cota: String(cota).trim() }
+        ]
       }
     })
 
     if (existingSale) {
-      console.log(`[Webhook ${PROCESS_ID}] DUPLICATE DETECTED. Skipping creation. ID: ${existingSale.id}`)
+      console.log(`[Webhook ${PROCESS_ID}] DUPLICATE DETECTED (Cota/Grupo/Adm). Skipping creation. ID: ${existingSale.id}`)
       return NextResponse.json({
         success: true,
         id: existingSale.id,
@@ -237,7 +250,9 @@ export async function POST(request: Request) {
         valorLiquido: valorLiquido,
         valorBruto: valorBruto,
         dataVenda: dataVenda,
-        mesCompetencia: mesCompetencia
+        mesCompetencia: mesCompetencia,
+        cota: String(cota).trim(),
+        grupo: String(grupo).trim()
       }
     })
 
