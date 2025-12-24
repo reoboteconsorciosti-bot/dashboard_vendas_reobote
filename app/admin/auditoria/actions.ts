@@ -45,7 +45,8 @@ export async function getOutliers() {
     return outliers.map(s => ({
         ...s,
         valorLiquido: Number(s.valorLiquido),
-        valorBruto: Number(s.valorBruto)
+        valorBruto: Number(s.valorBruto),
+        dataVenda: s.dataVenda.toISOString()
     }))
 }
 
