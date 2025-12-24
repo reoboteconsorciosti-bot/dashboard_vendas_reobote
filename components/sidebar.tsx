@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, TrendingUp, Tv, Users, LogOut, Menu, X } from "lucide-react"
+import { LayoutDashboard, TrendingUp, Tv, Users, LogOut, Menu, X, FileText, Database } from "lucide-react"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     onClose?: () => void
@@ -27,6 +27,12 @@ export function Sidebar({ className, onClose, ...props }: SidebarProps) {
             active: pathname === "/analytics",
         },
         {
+            label: "Relatório de Vendas",
+            icon: FileText,
+            href: "/vendas",
+            active: pathname === "/vendas",
+        },
+        {
             label: "Ranking TV",
             icon: Tv,
             href: "/tv-ranking",
@@ -38,6 +44,12 @@ export function Sidebar({ className, onClose, ...props }: SidebarProps) {
             icon: Users,
             href: "/admin/usuarios",
             active: pathname === "/admin/usuarios",
+        },
+        {
+            label: "Auditoria",
+            icon: Database,
+            href: "/admin/auditoria",
+            active: pathname === "/admin/auditoria",
         },
     ]
 
