@@ -123,33 +123,46 @@ export async function POST(request: Request) {
       // 4.3 Derive missing fields
       const mesCompetencia = parsed.mesCompetencia || `${parsed.dataVenda.getMonth() + 1}/${parsed.dataVenda.getFullYear()}`
 
-      // 4.4 DB Upsert
-      const sale = await prisma.sale.upsert({
+      // 4.4 DB Upsert (Manual Check due to missing Unique Constraint)
+      // We manually check for duplicates to avoid relying on the DB constraint which we removed for legacy support.
+
+      const existingSale = await prisma.sale.findFirst({
         where: {
-          administradora_grupo_cota: {
-            administradora: parsed.administradora,
-            grupo: parsed.grupo,
-            cota: parsed.cota
-          }
-        },
-        update: {
-          consultorNome: parsed.consultorNome,
-          valorLiquido: parsed.valorLiquido,
-          valorBruto: parsed.valorBruto,
-          dataVenda: parsed.dataVenda,
-          mesCompetencia: mesCompetencia,
-        },
-        create: {
-          consultorNome: parsed.consultorNome,
           administradora: parsed.administradora,
           grupo: parsed.grupo,
-          cota: parsed.cota,
-          valorLiquido: parsed.valorLiquido,
-          valorBruto: parsed.valorBruto,
-          dataVenda: parsed.dataVenda,
-          mesCompetencia: mesCompetencia,
+          cota: parsed.cota
         }
       })
+
+      let sale;
+
+      if (existingSale) {
+        // UPDATE existing
+        sale = await prisma.sale.update({
+          where: { id: existingSale.id },
+          data: {
+            consultorNome: parsed.consultorNome,
+            valorLiquido: parsed.valorLiquido,
+            valorBruto: parsed.valorBruto,
+            dataVenda: parsed.dataVenda,
+            mesCompetencia: mesCompetencia,
+          }
+        })
+      } else {
+        // CREATE new
+        sale = await prisma.sale.create({
+          data: {
+            consultorNome: parsed.consultorNome,
+            administradora: parsed.administradora,
+            grupo: parsed.grupo,
+            cota: parsed.cota,
+            valorLiquido: parsed.valorLiquido,
+            valorBruto: parsed.valorBruto,
+            dataVenda: parsed.dataVenda,
+            mesCompetencia: mesCompetencia,
+          }
+        })
+      }
       return sale
     }))
 
