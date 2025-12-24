@@ -13,15 +13,15 @@ type FilterParams = {
 }
 
 // Helper to build consistent WHERE clause
-function buildWhereClause(filters: FilterParams) {
-    const where: any = {}
+function buildWhereClause(filters: FilterParams): Prisma.SaleWhereInput {
+    const where: Prisma.SaleWhereInput = {}
 
     const now = new Date()
     const currentYear = now.getFullYear()
     const currentMonth = now.getMonth() // 0-indexed
 
     // Date Logic
-    const dateFilter: any = {}
+    const dateFilter: Prisma.DateTimeFilter = {}
     let hasDateFilter = false
 
     if (filters.ano && filters.ano !== '0') {
@@ -103,7 +103,7 @@ async function getRankingData(filters: FilterParams = {}) {
     })
 
     // Map to ranking (Lightweight payload - No photos)
-    const ranking = salesByConsultant.map((item: any, index: number) => {
+    const ranking = salesByConsultant.map((item, index) => {
         return {
             rank: index + 1,
             name: item.consultorNome,
@@ -125,13 +125,13 @@ async function getRecentSalesData(limit = 10) {
         }
     })
 
-    return sales.map((sale: any) => ({
+    return sales.map((sale) => ({
         id: sale.id,
         consultorNome: sale.consultorNome,
         administradora: sale.administradora,
         valorLiquido: Number(sale.valorLiquido),
         dataVenda: sale.dataVenda,
-        status: 'confirmado'
+        status: 'confirmado' as const
     }))
 }
 
@@ -163,7 +163,7 @@ export async function getUsers() {
     })
 
     // Map to format expected by frontend { sheetName: ..., displayName: ... }
-    return users.map((u: any) => {
+    return users.map((u) => {
         let optimizedPhotoUrl = null
 
         if (u.photoUrl) {
@@ -201,8 +201,10 @@ export async function getFiltersData() {
     })
 
     return {
-        consultores: consultants.map((c: any) => c.consultorNome),
-        administradoras: adms.map((a: any) => a.administradora)
+        return {
+            consultores: consultants.map((c) => c.consultorNome),
+            administradoras: adms.map((a) => a.administradora)
+        }
     }
 }
 

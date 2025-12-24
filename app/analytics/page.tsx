@@ -170,44 +170,39 @@ export default function AnalyticsPage() {
           <div className="flex overflow-x-auto pb-2 scrollbar-hide gap-2.5 pt-3">
             <Button
               variant={!hasActiveFilters ? "default" : "outline"}
-              size="sm"
               onClick={() => applyQuickFilter("all")}
-              className="whitespace-nowrap shadow-sm transition-all hover:scale-105"
+              className="h-12 md:h-9 whitespace-nowrap shadow-sm transition-all hover:scale-105"
             >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              <Sparkles className="w-4 h-4 md:w-3.5 md:h-3.5 mr-1.5" />
               Tudo
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => applyQuickFilter("current-month")}
-              className="whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
+              className="h-12 md:h-9 whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
             >
-              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+              <Calendar className="w-4 h-4 md:w-3.5 md:h-3.5 mr-1.5" />
               Mês Atual
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => applyQuickFilter("last-month")}
-              className="whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
+              className="h-12 md:h-9 whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
             >
               Mês Passado
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => applyQuickFilter("semester")}
-              className="whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
+              className="h-12 md:h-9 whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
             >
-              <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+              <TrendingUp className="w-4 h-4 md:w-3.5 md:h-3.5 mr-1.5" />
               Semestre
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => applyQuickFilter("year")}
-              className="whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
+              className="h-12 md:h-9 whitespace-nowrap shadow-sm transition-all hover:scale-105 hover:border-primary/50"
             >
               Ano Completo
             </Button>
@@ -414,14 +409,16 @@ export default function AnalyticsPage() {
         ) : (
           <div className="space-y-6">
             {stats && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-4">
                 <Card className="p-4 bg-gradient-to-br from-card to-primary/5 border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <DollarSign className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Bruto</p>
                     </div>
-                    <p className="text-xl md:text-2xl font-bold tracking-tight">{formatCompact(stats.totalBruto)}</p>
+                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate" title={formatCompact(stats.totalBruto)}>
+                      {formatCompact(stats.totalBruto)}
+                    </p>
                   </div>
                 </Card>
 
@@ -431,7 +428,7 @@ export default function AnalyticsPage() {
                       <TrendingUp className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Líquido</p>
                     </div>
-                    <p className="text-xl md:text-2xl font-bold tracking-tight text-success">
+                    <p className="text-3xl lg:text-4xl font-bold tracking-tight text-success truncate" title={formatCompact(stats.totalLiquido)}>
                       {formatCompact(stats.totalLiquido)}
                     </p>
                   </div>
@@ -443,7 +440,7 @@ export default function AnalyticsPage() {
                       <Target className="w-4 h-4" />
                       <p className="text-xs font-medium">Total Vendas</p>
                     </div>
-                    <p className="text-xl md:text-2xl font-bold tracking-tight">{stats.totalVendas}</p>
+                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate">{stats.totalVendas}</p>
                   </div>
                 </Card>
 
@@ -453,7 +450,7 @@ export default function AnalyticsPage() {
                       <Calendar className="w-4 h-4" />
                       <p className="text-xs font-medium">Ticket Médio</p>
                     </div>
-                    <p className="text-xl md:text-2xl font-bold tracking-tight">
+                    <p className="text-3xl lg:text-4xl font-bold tracking-tight truncate" title={formatCompact(stats.totalLiquido / stats.totalVendas)}>
                       {formatCompact(stats.totalLiquido / stats.totalVendas)}
                     </p>
                   </div>
@@ -461,7 +458,39 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            <Card className="overflow-hidden shadow-md border-border/50">
+            {/* Mobile Ranking List */}
+            <div className="space-y-4 md:hidden">
+              <h2 className="font-semibold text-lg px-1">Ranking</h2>
+              {ranking.map((vendedor, index) => (
+                <Card key={vendedor.consultorNome} className="p-4 flex items-center gap-4 border-border/60 shadow-sm">
+                  <div className="relative shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-muted border-2 border-background shadow-sm overflow-hidden">
+                      {vendedor.foto ? (
+                        <img src={vendedor.foto} alt={vendedor.consultorNome} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full bg-primary/10 text-primary font-bold text-lg">
+                          {vendedor.consultorNome.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <Badge className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full p-0 border border-background shadow-sm">
+                      #{index + 1}
+                    </Badge>
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="font-medium text-base truncate">{vendedor.consultorNome}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-xl font-bold text-success truncate">{formatCompact(vendedor.valorLiquido)}</p>
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">{vendedor.totalVendas} vendas</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Desktop Ranking Table */}
+            <Card className="hidden md:block overflow-hidden shadow-md border-border/50">
               <div className="p-4 border-b bg-muted/50">
                 <h2 className="font-semibold">Ranking de Vendedores</h2>
                 <p className="text-xs text-muted-foreground mt-1">{ranking.length} vendedores encontrados</p>

@@ -1,285 +1,214 @@
 import { NextResponse } from "next/server"
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
 
-// --- CONSTANTS & TYPES ---
+// --- CONSTANTS ---
 const N8N_TOKEN = process.env.N8N_WEBHOOK_TOKEN
 
-// --- HELPERS ---
+// --- HELPER: Flexible Key Extractor ---
+// Finds a value in an object using multiple possible key names (case insensitive, ignoring symbols)
+const findValue = (obj: any, keys: string[]) => {
+  if (!obj || typeof obj !== 'object') return undefined
+  const objKeys = Object.keys(obj)
+  for (const targetKey of keys) {
+    // Direct match
+    if (obj[targetKey] !== undefined) return obj[targetKey]
 
-/**
- * Robust currency parser.
- * Handles:
- * - Number: 50000 -> 50000
- * - ISO String: "50000.00" -> 50000
- * - BR String: "R$ 50.000,00" -> 50000
- * - US String: "50,000.00" -> 50000
- */
+    // Fuzzy match
+    const found = objKeys.find(k =>
+      k.toLowerCase().replace(/[^a-z0-9]/g, "") === targetKey.toLowerCase().replace(/[^a-z0-9]/g, "")
+    )
+    if (found) return obj[found]
+  }
+  return undefined
+}
+
+// --- HELPER: Parsers ---
 function parseDecimal(value: any): number {
-  try {
-    if (value === undefined || value === null) return 0
-    if (typeof value === "number") return value
-
-    let str = String(value).trim()
-
-    // Remove symbols like "R$", "$", spaces
-    str = str.replace(/[R$\s]/g, "")
-
-    // Case 1: Simple number string "1234.56"
-    if (/^-?\d+(\.\d+)?$/.test(str)) {
-      return parseFloat(str)
+  if (typeof value === "number") return value
+  if (!value) return 0
+  let str = String(value).trim().replace(/[R$\s]/g, "")
+  // Handle BR format (1.000,00) vs US format (1,000.00)
+  if (str.includes(",") && str.includes(".")) {
+    if (str.lastIndexOf(".") < str.lastIndexOf(",")) { // BR 1.234,56
+      str = str.replace(/\./g, "").replace(",", ".")
+    } else { // US 1,234.56
+      str = str.replace(/,/g, "")
     }
-
-    // Case 2: Mixed format. Detect separator positions.
-    const lastDotIndex = str.lastIndexOf(".")
-    const lastCommaIndex = str.lastIndexOf(",")
-
-    // If both exist
-    if (lastDotIndex !== -1 && lastCommaIndex !== -1) {
-      if (lastDotIndex < lastCommaIndex) {
-        // BR Format (1.234,56): Remove dots, swap comma to dot
-        str = str.replace(/\./g, "").replace(",", ".")
-      } else {
-        // US Format (1,234.56): Remove commas
-        str = str.replace(/,/g, "")
-      }
-    } else if (lastCommaIndex !== -1) {
-      // Assume comma is decimal (common in BR)
-      // "1234,56" -> "1234.56"
-      // "1,234" -> "1.234" (Small risk if it's meant to be 1234 US style, but BR context implies decimal)
-      str = str.replace(",", ".")
-    }
-    // If only dot exists, assume it's simple number or thousand separator?
-    // "1234" -> ok. "1.234" -> 1.234. 
-    // If it was 1234 formatted as "1.234", it's parsed as 1.234. 
-    // Ideally we assume standard float format for single dot.
-
-    const result = parseFloat(str)
-    return isNaN(result) ? 0 : result
-  } catch (error) {
-    console.warn("ParseDecimal Error:", error)
-    return 0
+  } else if (str.includes(",")) {
+    str = str.replace(",", ".") // Assume comma is decimal
   }
+  const result = parseFloat(str)
+  return isNaN(result) ? 0 : result
 }
 
-/**
- * Robust date parser.
- * Handles:
- * - ISO: "2023-10-25T10:00:00.000Z"
- * - ISO Date: "2023-10-25"
- * - BR Simple: "25/10/2023"
- */
 function parseDate(value: any): Date | null {
-  try {
-    if (!value) return null
+  if (!value) return null
+  // Try standard date
+  const date = new Date(value)
+  if (!isNaN(date.getTime())) return date
 
-    // 1. Try standard Date constructor (handles ISO)
-    const date = new Date(value)
-    if (!isNaN(date.getTime())) {
-      return date
+  // Try BR format DD/MM/YYYY
+  if (typeof value === "string" && value.includes("/")) {
+    const parts = value.split("/")
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10)
+      const month = parseInt(parts[1], 10) - 1
+      const yearPart = parts[2].split(" ")[0]
+      const year = parseInt(yearPart, 10)
+      const brDate = new Date(year, month, day)
+      if (!isNaN(brDate.getTime())) return brDate
     }
-
-    // 2. Try BR format DD/MM/YYYY
-    if (typeof value === "string" && value.includes("/")) {
-      const parts = value.split("/")
-      if (parts.length === 3) {
-        // parts[0] = Day, parts[1] = Month, parts[2] = Year (maybe with time)
-        const day = parseInt(parts[0], 10)
-        const month = parseInt(parts[1], 10) - 1
-        const yearPart = parts[2].split(" ")[0] // Handle "2025 10:00"
-        const year = parseInt(yearPart, 10)
-
-        const brDate = new Date(year, month, day)
-        if (!isNaN(brDate.getTime())) return brDate
-      }
-    }
-
-    return null
-  } catch (error) {
-    console.warn("ParseDate Error:", error)
-    return null
   }
+  return null
 }
+
+// --- ZOD SCHEMA ---
+const SaleSchema = z.object({
+  consultorNome: z.string().min(2, "Nome muito curto").trim(),
+  administradora: z.string().min(1, "Administradora obrigatória").trim().toUpperCase(),
+  grupo: z.string().min(1, "Grupo obrigatório").trim(),
+  cota: z.string().min(1, "Cota obrigatória").trim(),
+  valorLiquido: z.preprocess((val) => parseDecimal(val), z.number().refine(n => n >= 0, "Valor líquido não pode ser negativo")),
+  valorBruto: z.preprocess((val) => parseDecimal(val), z.number().refine(n => n >= 0, "Valor bruto não pode ser negativo")),
+  dataVenda: z.preprocess((val) => parseDate(val), z.date({ required_error: "Data inválida ou ausente" })),
+  mesCompetencia: z.string().optional()
+})
 
 // --- MAIN ROUTE ---
-
 export async function POST(request: Request) {
-  const PROCESS_ID = Date.now().toString(36).slice(-6) // ID curto seguro para logs
-  console.log(`[Webhook ${PROCESS_ID}] --- START PROCESSING ---`)
+  const PROCESS_ID = Date.now().toString(36).slice(-6)
+  console.log(`[Webhook ${PROCESS_ID}] START`)
 
   try {
-    // 1. Validate Authentication
+    // 1. Auth
     const authHeader = request.headers.get("authorization")
-    const receivedToken = authHeader?.replace("Bearer ", "").trim()
-
-    if (!N8N_TOKEN || receivedToken !== N8N_TOKEN) {
-      console.error(`[Webhook ${PROCESS_ID}] AUTH FAILED. Received: '${receivedToken}', Expected: '${N8N_TOKEN}'`)
-      return NextResponse.json(
-        { error: "Unauthorized", details: "Token inválido ou ausente" },
-        { status: 401 }
-      )
-    }
-    console.log(`[Webhook ${PROCESS_ID}] Auth Success`)
-
-    // 2. Read and Log Body (OBSERVABILITY)
-    let body: any
-    try {
-      body = await request.json()
-    } catch (e) {
-      console.error(`[Webhook ${PROCESS_ID}] JSON PARSE ERROR`, e)
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    const token = authHeader?.replace("Bearer ", "").trim()
+    if (!N8N_TOKEN || token !== N8N_TOKEN) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log(`[Webhook ${PROCESS_ID}] RAW PAYLOAD:`, JSON.stringify(body, null, 2))
+    // 2. Parse Body
+    const body = await request.json().catch(() => null)
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
 
-    // 3. Normalize Data Structure
-    // Handle: { ... } OR [ { ... } ] OR { vendas: [ ... ] }
-    let dataToProcess: any = null
+    // 3. Normalize to Array
+    let items: any[] = []
+    if (Array.isArray(body)) items = body
+    else if (body.vendas && Array.isArray(body.vendas)) items = body.vendas
+    else items = [body]
 
-    if (Array.isArray(body) && body.length > 0) {
-      console.log(`[Webhook ${PROCESS_ID}] Detected Array Payload`)
-      dataToProcess = body[0]
-    } else if (body.vendas && Array.isArray(body.vendas) && body.vendas.length > 0) {
-      console.log(`[Webhook ${PROCESS_ID}] Detected 'vendas' Array Payload`)
-      dataToProcess = body.vendas[0]
-    } else {
-      console.log(`[Webhook ${PROCESS_ID}] Detected Single Object Payload`)
-      dataToProcess = body
-    }
+    if (items.length === 0) return NextResponse.json({ error: "Empty payload" }, { status: 400 })
 
-    if (!dataToProcess) {
-      console.error(`[Webhook ${PROCESS_ID}] NO DATA FOUND inside payload`)
-      return NextResponse.json({ error: "Payload vazio ou formato desconhecido" }, { status: 400 })
-    }
+    console.log(`[Webhook ${PROCESS_ID}] Processing batch of ${items.length} items`)
 
-    // 4. Flexible Key Extraction (Case insensitive / Space vs Camel)
-    // Helper to find key value ignoring case and symbols
-    const findValue = (obj: any, keys: string[]) => {
-      const objKeys = Object.keys(obj)
-      for (const targetKey of keys) {
-        // Direct match
-        if (obj[targetKey] !== undefined) return obj[targetKey]
-
-        // Case insensitive match
-        const found = objKeys.find(k =>
-          k.toLowerCase().replace(/[^a-z0-9]/g, "") === targetKey.toLowerCase().replace(/[^a-z0-9]/g, "")
-        )
-        if (found) return obj[found]
+    // 4. Batch Processing (All Settled)
+    const results = await Promise.allSettled(items.map(async (rawItem, index) => {
+      // 4.1 Extract & Normalize
+      const normalizedData = {
+        consultorNome: findValue(rawItem, ["consultorNome", "consultor", "nomeConsultor"]),
+        administradora: findValue(rawItem, ["administradora", "adm"]),
+        grupo: findValue(rawItem, ["grupo", "nr_grupo"]),
+        cota: findValue(rawItem, ["cota", "nr_cota"]),
+        valorLiquido: findValue(rawItem, ["valorLiquido", "valor_liquido"]),
+        valorBruto: findValue(rawItem, ["valorBruto", "valor_bruto"]),
+        dataVenda: findValue(rawItem, ["dataVenda", "data_venda", "data"]),
+        mesCompetencia: findValue(rawItem, ["mesCompetencia", "mes_competencia"])
       }
-      return undefined
-    }
 
-    const consultor = findValue(dataToProcess, ["consultorNome", "consultor", "nomeConsultor"])
-    const administradora = findValue(dataToProcess, ["administradora", "adm"])
-    const valLiqRaw = findValue(dataToProcess, ["valorLiquido", "valor_liquido", "valor liquido"])
-    const valBrutoRaw = findValue(dataToProcess, ["valorBruto", "valor_bruto", "valor bruto"])
-    const dataVendaRaw = findValue(dataToProcess, ["dataVenda", "data_venda", "data venda", "data"])
-    const mesCompetenciaRaw = findValue(dataToProcess, ["mesCompetencia", "mes_competencia", "mes_ano", "mesCompetencia"])
-    const cota = findValue(dataToProcess, ["cota", "nr_cota", "numero_cota"])
-    const grupo = findValue(dataToProcess, ["grupo", "nr_grupo", "numero_grupo"])
+      // 4.2 Validate with Zod
+      const parsed = SaleSchema.parse(normalizedData)
 
-    console.log(`[Webhook ${PROCESS_ID}] EXTRACTED VALUES:`, {
-      consultor, administradora, valLiqRaw, valBrutoRaw, dataVendaRaw, mesCompetenciaRaw, cota, grupo
-    })
+      // 4.3 Derive missing fields
+      const mesCompetencia = parsed.mesCompetencia || `${parsed.dataVenda.getMonth() + 1}/${parsed.dataVenda.getFullYear()}`
 
-    // 5. Validation & Sanitization
-    if (!consultor || !administradora || !cota || !grupo) {
-      const missing = []
-      if (!consultor) missing.push("consultor")
-      if (!administradora) missing.push("administradora")
-      if (!cota) missing.push("cota")
-      if (!grupo) missing.push("grupo")
-
-      // Permitir processar sem cota/grupo temporariamente (retrocompatibilidade) se o usuário desejar?
-      // Melhor não, o usuário quer consertar os dados. Vamos exigir.
-
-      const msg = `Campos obrigatórios faltando: ${missing.join(", ")}`
-      console.error(`[Webhook ${PROCESS_ID}] VALIDATION ERROR: ${msg}`)
-      return NextResponse.json({ error: msg }, { status: 400 })
-    }
-
-    const valorLiquido = parseDecimal(valLiqRaw)
-    const valorBruto = parseDecimal(valBrutoRaw)
-
-    // Ensure accurate Date Object
-    const dataVenda = parseDate(dataVendaRaw) || new Date()
-
-    // Ensure mesCompetencia string
-    const mesCompetencia = mesCompetenciaRaw ? String(mesCompetenciaRaw) :
-      `${dataVenda.getMonth() + 1}/${dataVenda.getFullYear()}` // Fallback
-
-    console.log(`[Webhook ${PROCESS_ID}] FINAL PROCESSED DATA:`, {
-      consultorNome: consultor,
-      administradora,
-      valorLiquido,
-      valorBruto,
-      dataVenda,
-      mesCompetencia,
-      cota,
-      grupo
-    })
-
-    // 6. DB Persistence
-    // 6.1 Idempotency Check via Unique Key (Prisma/DB will handle race condition via CONSTRAINT, but we check to fail gracefuly)
-    // Opcional: Adicionar try/catch específico para erro P2002 (Unique constraint failed)
-
-    // Check manual antes (menos confiável em alta concorrência mas bom para log)
-    const existingSale = await prisma.sale.findFirst({
-      where: {
-        AND: [
-          { administradora: String(administradora).trim() },
-          { grupo: String(grupo).trim() },
-          { cota: String(cota).trim() }
-        ]
-      }
-    })
-
-    if (existingSale) {
-      console.log(`[Webhook ${PROCESS_ID}] DUPLICATE DETECTED (Cota/Grupo/Adm). Skipping creation. ID: ${existingSale.id}`)
-      return NextResponse.json({
-        success: true,
-        id: existingSale.id,
-        message: "Venda já existente (Skipped)"
+      // 4.4 DB Upsert
+      const sale = await prisma.sale.upsert({
+        where: {
+          administradora_grupo_cota: {
+            administradora: parsed.administradora,
+            grupo: parsed.grupo,
+            cota: parsed.cota
+          }
+        },
+        update: {
+          consultorNome: parsed.consultorNome,
+          valorLiquido: parsed.valorLiquido,
+          valorBruto: parsed.valorBruto,
+          dataVenda: parsed.dataVenda,
+          mesCompetencia: mesCompetencia,
+        },
+        create: {
+          consultorNome: parsed.consultorNome,
+          administradora: parsed.administradora,
+          grupo: parsed.grupo,
+          cota: parsed.cota,
+          valorLiquido: parsed.valorLiquido,
+          valorBruto: parsed.valorBruto,
+          dataVenda: parsed.dataVenda,
+          mesCompetencia: mesCompetencia,
+        }
       })
-    }
+      return sale
+    }))
 
-    const sale = await prisma.sale.create({
-      data: {
-        consultorNome: String(consultor).trim(),
-        administradora: String(administradora).trim(),
-        valorLiquido: valorLiquido,
-        valorBruto: valorBruto,
-        dataVenda: dataVenda,
-        mesCompetencia: mesCompetencia,
-        cota: String(cota).trim(),
-        grupo: String(grupo).trim()
+    // 5. Aggregate Results
+    const successes = results.filter(r => r.status === 'fulfilled').length
+    const failures = results.filter(r => r.status === 'rejected').map((r: any, idx) => {
+      // Try to extract useful error message
+      let msg = "Unknown error"
+      if (r.reason instanceof z.ZodError) {
+        msg = r.reason.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(", ")
+      } else if (r.reason instanceof Error) {
+        msg = r.reason.message
+      }
+      return {
+        item_index: idx, // Note: index in filtered array might not match original unless mapped carefully, but logic above maps promises 1:1
+        // Actually to get correct index we need to map over the original 'items' array.
+        // But wait, results array maps 1:1 to items array order because Promise.allSettled preserves order.
+        // So I need to find the index in 'results'.
+        error: msg
       }
     })
 
-    console.log(`[Webhook ${PROCESS_ID}] DB SUCCESS. ID: ${sale.id}`)
+    // More precise mapping for failure details
+    const detailedFailures = results.map((r, idx) => {
+      if (r.status === 'fulfilled') return null
+      let msg = "Erro desconhecido"
+      if (r.reason instanceof z.ZodError) {
+        msg = r.reason.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(", ")
+      } else if (r.reason instanceof Error) {
+        msg = r.reason.message
+      } else {
+        msg = String(r.reason)
+      }
+      return {
+        item_index: idx,
+        erro: msg,
+        dados_parciais: items[idx] // Return raw data to help debugging
+      }
+    }).filter(Boolean)
 
-    // 7. Cache Revalidation
-    revalidatePath("/")
-    revalidatePath("/tv-ranking")
-    revalidatePath("/analytics") // Just in case
-    console.log(`[Webhook ${PROCESS_ID}] CACHE REVALIDATED`)
+    console.log(`[Webhook ${PROCESS_ID}] DONE. Success: ${successes}, Failures: ${detailedFailures.length}`)
+
+    // 6. Cache Revalidation
+    if (successes > 0) {
+      revalidatePath("/")
+      revalidatePath("/tv-ranking")
+      revalidatePath("/analytics")
+    }
 
     return NextResponse.json({
-      success: true,
-      id: sale.id,
-      message: "Venda processada com sucesso"
-    })
+      total_recebido: items.length,
+      sucessos: successes,
+      falhas: detailedFailures.length,
+      detalhes_falhas: detailedFailures
+    }, { status: 200 }) // Always 200 to not break n8n flow, it receives the report
 
   } catch (error) {
-    console.error(`[Webhook ${PROCESS_ID}] CRITICAL ERROR:`, error)
-    return NextResponse.json({
-      success: false,
-      error: "Internal Server Error",
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 })
+    console.error(`[Webhook ${PROCESS_ID}] CRITICAL SYSTEM ERROR`, error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ status: "active", message: "Webhook is listening" })
-}
