@@ -2,6 +2,8 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { SalesDataTable } from "@/components/sales/sales-data-table"
 import { FileText } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export default function VendasPage() {
     return (
         <DashboardShell>
