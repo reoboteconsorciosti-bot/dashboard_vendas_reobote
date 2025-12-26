@@ -1,7 +1,5 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
-
 export default function GlobalError({
     error,
     reset,
@@ -15,7 +13,12 @@ export default function GlobalError({
                 <div className="flex h-screen w-full flex-col items-center justify-center bg-black p-4 text-center text-white">
                     <h2 className="mb-4 text-2xl font-bold">Erro Crítico no Sistema</h2>
                     <p className="mb-8 text-gray-400">Ocorreu um erro irrecuperável na aplicação.</p>
-                    <Button onClick={() => reset()}>Tentar Recarregar</Button>
+                    <button
+                        onClick={() => reset()}
+                        className="rounded bg-blue-600 px-4 py-2 font-bold text-white transition-colors hover:bg-blue-700"
+                    >
+                        Tentar Recarregar
+                    </button>
                 </div>
             </body>
         </html>
