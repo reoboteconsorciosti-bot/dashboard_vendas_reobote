@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrendingUp, BarChart3, Trophy, User } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 
+// A VACINA: Adicione isso para impedir o erro de useContext no Build
+export const dynamic = "force-dynamic"
+
 export default function HomePage() {
   return (
     <DashboardShell>
