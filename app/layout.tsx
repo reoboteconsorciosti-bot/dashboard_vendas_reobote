@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+// REMOVIDO TEMPORARIAMENTE: import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const inter = Inter({
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
 }
 
-import { Toaster } from "@/components/ui/toaster"
+// REMOVIDO TEMPORARIAMENTE: import { Toaster } from "@/components/ui/toaster"
 
 export default function RootLayout({
   children,
@@ -48,8 +48,7 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
-        <Analytics />
-        <Toaster />
+        {/* Analytics e Toaster removidos temporariamente para destravar o build */}
       </body>
     </html>
   )
