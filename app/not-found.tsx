@@ -1,9 +1,7 @@
 'use client'
 
-// Página 404 Personalizada e Leve
-// Evita erros de Contexto durante o Build
-
-import Link from 'next/link'
+// REMOVEMOS o import do 'next/link' para evitar erro de Contexto
+// import Link from 'next/link'
 
 export default function NotFound() {
     return (
@@ -22,7 +20,9 @@ export default function NotFound() {
             <p style={{ color: '#a1a1aa', marginBottom: '2rem', fontSize: '1.2rem' }}>
                 Página não encontrada.
             </p>
-            <Link
+
+            {/* Usamos a tag <a> nativa para garantir que NENHUM contexto seja exigido */}
+            <a
                 href="/"
                 style={{
                     padding: '12px 24px',
@@ -30,11 +30,12 @@ export default function NotFound() {
                     color: 'white',
                     textDecoration: 'none',
                     borderRadius: '6px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
                 }}
             >
                 Voltar ao Início
-            </Link>
+            </a>
         </div>
     )
 }
