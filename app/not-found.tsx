@@ -1,8 +1,3 @@
-// REMOVA o 'use client' se não tiver hooks. 
-// Se precisar de 'use client' por causa de onClick, pode manter, 
-// mas o 'force-dynamic' é o segredo.
-
-export const dynamic = "force-dynamic"; // <--- O PULO DO GATO 🐈
 
 export default function NotFound() {
     return (
