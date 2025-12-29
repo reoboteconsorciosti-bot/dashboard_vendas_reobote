@@ -11,7 +11,10 @@ export function Providers() {
         setMounted(true)
     }, [])
 
-    if (!mounted) return null
+    if (!mounted) return (
+        <>
+        </>
+    )
 
     return (
         <>
