@@ -1,7 +1,10 @@
 {
   "name": "my-v0-project",
-  "version": "0.1.0-fix9",
+  "version": "0.1.0-fix10",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
