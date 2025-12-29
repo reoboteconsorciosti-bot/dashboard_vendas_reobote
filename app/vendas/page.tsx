@@ -1,10 +1,11 @@
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SalesDataTable } from "@/components/sales/sales-data-table"
 import { FileText } from "lucide-react"
+import { getSalesList } from "@/app/actions/sales-list-actions"
 
 export const dynamic = "force-dynamic"
 
-export default function VendasPage() {
+export default async function VendasPage() {
     return (
         <DashboardShell>
             <div className="container mx-auto p-6 space-y-6 max-w-7xl">

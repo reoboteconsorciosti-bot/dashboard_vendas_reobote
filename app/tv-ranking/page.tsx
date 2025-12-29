@@ -1,10 +1,15 @@
 import { getRanking, getUsers } from "@/app/actions/dashboard-actions"
-import { TVRankingClient } from "@/components/tv-ranking-client"
-import type { DashboardData } from "@/components/tv-ranking-client"
+import { TvRankingContent } from "@/components/tv-ranking/tv-ranking-content"
+import type { DashboardData } from "@/components/tv-ranking-client" // This type might need to be updated if TvRankingContent uses a different type
 
 // This is a Server Component by default
 export const dynamic = "force-dynamic"
-export default async function TVRankingPage() {
+
+export default async function TvRankingPage() {
+  // Assuming getSalesList and currentDate are defined elsewhere or need to be added.
+  // For now, I'll keep the original currentDate definition and comment out getSalesList
+  // as it's not defined in the original context.
+  // const sales = await getSalesList() // This function is not defined in the original file.
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
