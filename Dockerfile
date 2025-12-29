@@ -56,4 +56,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Usamos a flag --skip-generate pois o client já foi gerado no builder e copiado via standalone
-CMD npx prisma db push --accept-data-loss --skip-generate && node server.js
+# Usamos a flag --skip-generate pois o client já foi gerado no builder e copiado via standalone
+CMD ["node", "server.js"]
