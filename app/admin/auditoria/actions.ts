@@ -52,7 +52,7 @@ export async function getOutliers() {
             ...s,
             valorLiquido: Number(s.valorLiquido),
             valorBruto: Number(s.valorBruto),
-            dataVenda: s.dataVenda.toISOString()
+            dataVenda: s.dataVenda ? s.dataVenda.toISOString() : new Date().toISOString()
         }))
     } catch (error) {
         console.error("Error fetching outliers:", error)

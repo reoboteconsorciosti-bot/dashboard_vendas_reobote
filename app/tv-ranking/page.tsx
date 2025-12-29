@@ -1,3 +1,4 @@
+import { getRanking, getUsers } from "@/app/actions/dashboard-actions"
 import { TVRankingClient, type DashboardData } from "@/components/tv-ranking-client"
 
 // This is a Server Component by default
@@ -20,12 +21,15 @@ export default async function TvRankingPage() {
   ])
 
   // Process data (Server-Side Calculation)
-  const profilesMap = usersData.reduce(
-    (
-      acc: Record<string, { displayName: string; photoUrl?: string }>,
-      user: { sheetName: string; displayName: string; photoUrl?: string },
-    ) => {
-      acc[user.sheetName] = { displayName: user.displayName, photoUrl: user.photoUrl }
+  const profilesMap = usersData.reduce<Record<string, { displayName: string; photoUrl?: string }>>(
+    (acc, user) => {
+      // Safety check for sheetName
+      if (user.sheetName) {
+        acc[user.sheetName] = {
+          displayName: user.displayName || user.sheetName,
+          photoUrl: user.photoUrl || undefined
+        }
+      }
       return acc
     },
     {},
