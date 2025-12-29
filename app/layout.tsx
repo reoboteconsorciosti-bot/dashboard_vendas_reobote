@@ -46,6 +46,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <div className="fixed top-0 left-0 z-[9999] bg-green-500 text-black p-4 font-bold text-xl border-4 border-white">
+          DEBUG: SYSTEM ONLINE - V16
+        </div>
         {children}
       </body>
     </html>

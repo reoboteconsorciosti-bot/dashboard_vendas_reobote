@@ -18,8 +18,8 @@ export function Providers() {
 
     return (
         <>
-            <Toaster />
-            <Analytics />
+            {/* <Toaster /> */}
+            {/* <Analytics /> */}
         </>
     )
 }
