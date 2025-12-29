@@ -216,27 +216,16 @@ export async function getFiltersData() {
 // But let's keep it simple and just export the functions directly.
 
 // Cached Exports
+// Direct Exports (Skipping unstable_cache for stability)
 export const getRanking = async (filters: FilterParams = {}) => {
-    return await unstable_cache(
-        async () => getRankingData(filters),
-        [`ranking-data-${JSON.stringify(filters)}`], // Validate cache based on filters
-        { tags: ['dashboard-data'], revalidate: 3600 }
-    )()
+    return await getRankingData(filters)
 }
 
 export const getRecentSales = async (limit = 10) => {
-    return await unstable_cache(
-        async () => getRecentSalesData(limit),
-        [`recent-sales-${limit}`],
-        { tags: ['dashboard-data'], revalidate: 3600 }
-    )()
+    return await getRecentSalesData(limit)
 }
 
 export const getStats = async (filters: FilterParams = {}) => {
-    return await unstable_cache(
-        async () => getKPIData(filters),
-        [`kpi-data-${JSON.stringify(filters)}`],
-        { tags: ['dashboard-data'], revalidate: 3600 }
-    )()
+    return await getKPIData(filters)
 }
 
