@@ -1,11 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
-import { Toaster } from "@/components/ui/toaster"
-
-export const dynamic = "force-dynamic"
+import { Providers } from "@/components/providers"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -49,8 +46,7 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
-        {/* <Analytics /> */}
-        {/* <Toaster /> */}
+        <Providers />
       </body>
     </html>
   )
