@@ -5,8 +5,6 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 
-export const dynamic = "force-dynamic"
-
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
