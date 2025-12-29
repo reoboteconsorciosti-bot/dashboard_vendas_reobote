@@ -97,7 +97,8 @@ export async function getSalesList({
                     valorBruto: true,
                     valorLiquido: true,
                     dataVenda: true,
-                    mesCompetencia: true
+                    mesCompetencia: true,
+                    createdAt: true
                 }
             }),
             prisma.sale.count({ where }),
@@ -119,8 +120,8 @@ export async function getSalesList({
                 ...s,
                 valorBruto: Number(s.valorBruto),
                 valorLiquido: Number(s.valorLiquido),
-                dataVenda: s.dataVenda.toISOString(), // Ensure serializability
-                createdAt: s.createdAt.toISOString()
+                dataVenda: s.dataVenda ? s.dataVenda.toISOString() : new Date().toISOString(),
+                createdAt: s.createdAt ? s.createdAt.toISOString() : new Date().toISOString()
             })),
             totalPages: Math.ceil(total / limit),
             currentPage: page,

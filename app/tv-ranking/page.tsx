@@ -1,6 +1,4 @@
-import { getRanking, getUsers } from "@/app/actions/dashboard-actions"
-import { TvRankingContent } from "@/components/tv-ranking/tv-ranking-content"
-import type { DashboardData } from "@/components/tv-ranking-client" // This type might need to be updated if TvRankingContent uses a different type
+import { TVRankingClient, type DashboardData } from "@/components/tv-ranking-client"
 
 // This is a Server Component by default
 export const dynamic = "force-dynamic"
