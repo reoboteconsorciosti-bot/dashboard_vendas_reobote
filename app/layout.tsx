@@ -5,8 +5,6 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 
-export const dynamic = "force-dynamic"
-
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -49,8 +47,8 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
-        {/* <Analytics /> */}
-        {/* <Toaster /> */}
+        <Analytics />
+        <Toaster />
       </body>
     </html>
   )
