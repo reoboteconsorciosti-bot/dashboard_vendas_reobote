@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
-import { Providers } from "@/components/providers"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,7 +45,6 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
-        <Providers />
       </body>
     </html>
   )
