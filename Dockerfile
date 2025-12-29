@@ -22,6 +22,8 @@ RUN npx prisma generate
 
 # Build Next.js
 # O Prisma Client gerado será usado aqui durante a geração estática
+# Set production environment for the build process
+ENV NODE_ENV=production
 RUN npm run build
 
 FROM base AS runner
