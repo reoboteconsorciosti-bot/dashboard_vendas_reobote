@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "0.1.0-fix10",
+  "version": "0.1.0-fix11",
   "private": true,
   "engines": {
     "node": ">=20.0.0"
