@@ -94,18 +94,23 @@ export async function POST(request: Request) {
     if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
 
     // 3. Normalize to Array
-    let items: any[] = []
-    if (Array.isArray(body)) items = body
-    else if (body.vendas && Array.isArray(body.vendas)) items = body.vendas
-    else items = [body]
+    let rawItems: any[] = []
+    if (Array.isArray(body)) rawItems = body
+    else if (body.vendas && Array.isArray(body.vendas)) rawItems = body.vendas
+    else rawItems = [body]
 
-    if (items.length === 0) return NextResponse.json({ error: "Empty payload" }, { status: 400 })
+    if (rawItems.length === 0) return NextResponse.json({ error: "Empty payload" }, { status: 400 })
 
-    console.log(`[Webhook ${PROCESS_ID}] Processing batch of ${items.length} items`)
+    console.log(`[Webhook ${PROCESS_ID}] Processing batch of ${rawItems.length} items`)
 
-    // 4. Batch Processing (All Settled)
-    const results = await Promise.allSettled(items.map(async (rawItem, index) => {
-      // 4.1 Extract & Normalize
+    // 4. PRE-PROCESSING: Parse & Validate all items
+    // We map them to a standard structure to allow bulk operations
+    const parsedItems: {
+      success: boolean;
+      data?: z.infer<typeof SaleSchema> & { key: string };
+      error?: string;
+      originalIndex: number
+    }[] = rawItems.map((rawItem, index) => {
       const normalizedData = {
         consultorNome: findValue(rawItem, ["consultorNome", "consultor", "nomeConsultor"]),
         administradora: findValue(rawItem, ["administradora", "adm"]),
@@ -117,107 +122,149 @@ export async function POST(request: Request) {
         mesCompetencia: findValue(rawItem, ["mesCompetencia", "mes_competencia"])
       }
 
-      // 4.2 Validate with Zod
-      const parsed = SaleSchema.parse(normalizedData)
+      const result = SaleSchema.safeParse(normalizedData)
 
-      // 4.3 Derive missing fields
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(", "),
+          originalIndex: index
+        }
+      }
+
+      const parsed = result.data
       const mesCompetencia = parsed.mesCompetencia || `${parsed.dataVenda.getMonth() + 1}/${parsed.dataVenda.getFullYear()}`
 
-      // 4.4 DB Upsert (Manual Check due to missing Unique Constraint)
-      // We manually check for duplicates to avoid relying on the DB constraint which we removed for legacy support.
-
-      const existingSale = await prisma.sale.findFirst({
-        where: {
-          administradora: parsed.administradora,
-          grupo: parsed.grupo,
-          cota: parsed.cota
-        }
-      })
-
-      let sale;
-
-      if (existingSale) {
-        // UPDATE existing
-        sale = await prisma.sale.update({
-          where: { id: existingSale.id },
-          data: {
-            consultorNome: parsed.consultorNome,
-            valorLiquido: parsed.valorLiquido,
-            valorBruto: parsed.valorBruto,
-            dataVenda: parsed.dataVenda,
-            mesCompetencia: mesCompetencia,
-          }
-        })
-      } else {
-        // CREATE new
-        sale = await prisma.sale.create({
-          data: {
-            consultorNome: parsed.consultorNome,
-            administradora: parsed.administradora,
-            grupo: parsed.grupo,
-            cota: parsed.cota,
-            valorLiquido: parsed.valorLiquido,
-            valorBruto: parsed.valorBruto,
-            dataVenda: parsed.dataVenda,
-            mesCompetencia: mesCompetencia,
-          }
-        })
-      }
-      return sale
-    }))
-
-    // 5. Aggregate Results
-    const successes = results.filter(r => r.status === 'fulfilled').length
-    const failures = results.filter(r => r.status === 'rejected').map((r: any, idx) => {
-      // Try to extract useful error message
-      let msg = "Unknown error"
-      if (r.reason instanceof z.ZodError) {
-        msg = r.reason.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(", ")
-      } else if (r.reason instanceof Error) {
-        msg = r.reason.message
-      }
       return {
-        item_index: idx, // Note: index in filtered array might not match original unless mapped carefully, but logic above maps promises 1:1
-        // Actually to get correct index we need to map over the original 'items' array.
-        // But wait, results array maps 1:1 to items array order because Promise.allSettled preserves order.
-        // So I need to find the index in 'results'.
-        error: msg
+        success: true,
+        data: {
+          ...parsed,
+          mesCompetencia,
+          // Create a unique key for matching: Adm+Grupo+Cota
+          key: `${parsed.administradora}-${parsed.grupo}-${parsed.cota}`
+        },
+        originalIndex: index
       }
     })
 
-    // More precise mapping for failure details
-    const detailedFailures = results.map((r, idx) => {
-      if (r.status === 'fulfilled') return null
-      let msg = "Erro desconhecido"
-      if (r.reason instanceof z.ZodError) {
-        msg = r.reason.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(", ")
-      } else if (r.reason instanceof Error) {
-        msg = r.reason.message
+    const validItems = parsedItems.filter(i => i.success && i.data).map(i => i.data!)
+
+    // If everything failed, return early
+    if (validItems.length === 0) {
+      const failures = parsedItems.map(i => ({
+        item_index: i.originalIndex,
+        erro: i.error,
+        dados_parciais: rawItems[i.originalIndex]
+      }))
+      return NextResponse.json({
+        total_recebido: rawItems.length,
+        sucessos: 0,
+        falhas: rawItems.length,
+        detalhes_falhas: failures
+      }, { status: 200 })
+    }
+
+    // 5. BULK LOOKUP
+    // Find all existing records that match our keys
+    const matchConditions = validItems.map(item => ({
+      administradora: item.administradora,
+      grupo: item.grupo,
+      cota: item.cota
+    }))
+
+    // Use findMany with OR to get them all in one shot
+    const existingRecords = await prisma.sale.findMany({
+      where: {
+        OR: matchConditions
+      },
+      select: {
+        id: true,
+        administradora: true,
+        grupo: true,
+        cota: true
+      }
+    })
+
+    // Create a Map for fast O(1) checking
+    // Key: "ADM-GRUPO-COTA" -> ID
+    const existingMap = new Map<string, string>()
+    existingRecords.forEach(rec => {
+      existingMap.set(`${rec.administradora}-${rec.grupo}-${rec.cota}`, rec.id)
+    })
+
+    // 6. CLASSIFY: Create vs Update
+    const toCreate: any[] = []
+    const toUpdate: any[] = []
+
+    // Deduplication within the batch:
+    // If the input JSON has the same cota twice, we only process the LAST one (latest state).
+    const uniqueBatchItems = new Map<string, typeof validItems[0]>()
+    validItems.forEach(item => {
+      uniqueBatchItems.set(item.key, item)
+    })
+
+    for (const item of uniqueBatchItems.values()) {
+      const existingId = existingMap.get(item.key)
+
+      const payload = {
+        consultorNome: item.consultorNome,
+        administradora: item.administradora,
+        grupo: item.grupo,
+        cota: item.cota,
+        valorLiquido: item.valorLiquido,
+        valorBruto: item.valorBruto,
+        dataVenda: item.dataVenda,
+        mesCompetencia: item.mesCompetencia
+      }
+
+      if (existingId) {
+        toUpdate.push({
+          where: { id: existingId },
+          data: payload
+        })
       } else {
-        msg = String(r.reason)
+        toCreate.push(payload)
       }
-      return {
-        item_index: idx,
-        erro: msg,
-        dados_parciais: items[idx] // Return raw data to help debugging
-      }
-    }).filter(Boolean)
+    }
 
-    console.log(`[Webhook ${PROCESS_ID}] DONE. Success: ${successes}, Failures: ${detailedFailures.length}`)
+    console.log(`[Webhook ${PROCESS_ID}] Plan: Create ${toCreate.length}, Update ${toUpdate.length}`)
 
-    // 6. Cache Revalidation
-    if (successes > 0) {
+    // 7. EXECUTE DB OPERATIONS
+    try {
+      await prisma.$transaction([
+        // Batch Insert
+        ...(toCreate.length > 0 ? [prisma.sale.createMany({ data: toCreate })] : []),
+        // Batch Updates (must be individual promises in transaction)
+        ...toUpdate.map(upd => prisma.sale.update(upd))
+      ])
+    } catch (dbError) {
+      console.error(`[Webhook ${PROCESS_ID}] Transaction failed`, dbError)
+      return NextResponse.json({ error: "Database transaction failed", details: String(dbError) }, { status: 500 })
+    }
+
+    // 8. Cache Revalidation
+    if (validItems.length > 0) {
       revalidatePath("/")
       revalidatePath("/tv-ranking")
       revalidatePath("/analytics")
     }
 
+    // 9. Prepare Response
+    const failureDetails = parsedItems.filter(i => !i.success).map(i => ({
+      item_index: i.originalIndex,
+      erro: i.error,
+      dados_parciais: rawItems[i.originalIndex]
+    }))
+
     return NextResponse.json({
-      total_recebido: items.length,
-      sucessos: successes,
-      falhas: detailedFailures.length,
-      detalhes_falhas: detailedFailures
-    }, { status: 200 }) // Always 200 to not break n8n flow, it receives the report
+      total_recebido: rawItems.length,
+      sucessos: validItems.length,
+      // Note: "Updated" items are counted as successes here, consistent with previous logic
+      criados: toCreate.length,
+      atualizados: toUpdate.length,
+      falhas: failureDetails.length,
+      detalhes_falhas: failureDetails
+    }, { status: 200 })
 
   } catch (error) {
     console.error(`[Webhook ${PROCESS_ID}] CRITICAL SYSTEM ERROR`, error)
