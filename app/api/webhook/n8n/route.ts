@@ -45,11 +45,25 @@ function parseDecimal(value: any): number {
 
 function parseDate(value: any): Date | null {
   if (!value) return null
-  // Try standard date
+
+  // 1. Handle timestamp or Excel serial number
+  if (typeof value === 'number') {
+    // If it's a small number (e.g. 45678), it's likely an Excel serial date (days since 1900)
+    // Excel base date is Dec 30, 1899. Javascript is Jan 1, 1970.
+    // Difference is 25569 days.
+    // 86400 * 1000 is ms per day.
+    if (value < 100000) {
+      return new Date(Math.round((value - 25569) * 86400 * 1000))
+    }
+    // Otherwise assume standard JS timestamp (ms)
+    return new Date(value)
+  }
+
+  // 2. Try standard date string (ISO)
   const date = new Date(value)
   if (!isNaN(date.getTime())) return date
 
-  // Try BR format DD/MM/YYYY
+  // 3. Try BR format DD/MM/YYYY
   if (typeof value === "string" && value.includes("/")) {
     const parts = value.split("/")
     if (parts.length === 3) {
@@ -68,8 +82,8 @@ function parseDate(value: any): Date | null {
 const SaleSchema = z.object({
   consultorNome: z.string().min(2, "Nome muito curto").trim(),
   administradora: z.string().min(1, "Administradora obrigatória").trim().toUpperCase(),
-  grupo: z.string().min(1, "Grupo obrigatório").trim(),
-  cota: z.string().min(1, "Cota obrigatória").trim(),
+  grupo: z.string().optional().default("LEGADO"),
+  cota: z.string().optional().default("LEGADO"),
   valorLiquido: z.preprocess((val) => parseDecimal(val), z.number().refine(n => n >= 0, "Valor líquido não pode ser negativo")),
   valorBruto: z.preprocess((val) => parseDecimal(val), z.number().refine(n => n >= 0, "Valor bruto não pode ser negativo")),
   dataVenda: z.preprocess((val) => parseDate(val), z.date({ required_error: "Data inválida ou ausente" })),
@@ -93,11 +107,16 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null)
     if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
 
-    // 3. Normalize to Array
-    let rawItems: any[] = []
-    if (Array.isArray(body)) rawItems = body
-    else if (body.vendas && Array.isArray(body.vendas)) rawItems = body.vendas
-    else rawItems = [body]
+    // 3. Normalize to Array (Recursive for nested structures)
+    const extractItems = (input: any): any[] => {
+      if (!input) return []
+      if (Array.isArray(input)) return input.flatMap(extractItems)
+      if (input.vendas && Array.isArray(input.vendas)) return extractItems(input.vendas)
+      // If it's a "wrapper" object from n8n that contains data property? usually not, just flatten.
+      return [input]
+    }
+
+    const rawItems = extractItems(body)
 
     if (rawItems.length === 0) return NextResponse.json({ error: "Empty payload" }, { status: 400 })
 
@@ -111,6 +130,7 @@ export async function POST(request: Request) {
       error?: string;
       originalIndex: number
     }[] = rawItems.map((rawItem, index) => {
+
       const normalizedData = {
         consultorNome: findValue(rawItem, ["consultorNome", "consultor", "nomeConsultor"]),
         administradora: findValue(rawItem, ["administradora", "adm"]),
