@@ -155,13 +155,20 @@ export async function POST(request: Request) {
       const parsed = result.data
       const mesCompetencia = parsed.mesCompetencia || `${parsed.dataVenda.getMonth() + 1}/${parsed.dataVenda.getFullYear()}`
 
+      // Smart Key Generation
+      // If we have strict IDs (Grupo/Cota), use them.
+      // If not (LEGADO), fall back to heuristic (Who + How Much + When).
+      const isLegacy = parsed.grupo === "LEGADO" || parsed.cota === "LEGADO"
+      const key = isLegacy
+        ? `LEGADO-${parsed.consultorNome}-${parsed.valorLiquido}-${parsed.dataVenda.toISOString().split('T')[0]}` // Heuristic Key
+        : `${parsed.administradora}-${parsed.grupo}-${parsed.cota}` // Strict Key
+
       return {
         success: true,
         data: {
           ...parsed,
           mesCompetencia,
-          // Create a unique key for matching: Adm+Grupo+Cota
-          key: `${parsed.administradora}-${parsed.grupo}-${parsed.cota}`
+          key
         },
         originalIndex: index
       }
@@ -201,15 +208,35 @@ export async function POST(request: Request) {
         id: true,
         administradora: true,
         grupo: true,
-        cota: true
+        cota: true,
+        // Detailed fields required for Smart Key reconstruction (Legacy Matching)
+        consultorNome: true,
+        valorLiquido: true,
+        dataVenda: true
       }
     })
 
     // Create a Map for fast O(1) checking
-    // Key: "ADM-GRUPO-COTA" -> ID
     const existingMap = new Map<string, string>()
+
     existingRecords.forEach(rec => {
-      existingMap.set(`${rec.administradora}-${rec.grupo}-${rec.cota}`, rec.id)
+      const isLegacy = rec.grupo === "LEGADO" || rec.cota === "LEGADO"
+      let key = ""
+
+      if (isLegacy) {
+        // Reconstruct the heuristic key from DB data
+        // Ensure Number casting for Decimal types
+        const val = Number(rec.valorLiquido)
+        const dateStr = rec.dataVenda.toISOString().split('T')[0]
+        key = `LEGADO-${rec.consultorNome}-${val}-${dateStr}`
+      } else {
+        key = `${rec.administradora}-${rec.grupo}-${rec.cota}`
+      }
+
+      // If multiple DB records match the same legacy key (duplicates exist?), 
+      // this map will keep the last one found. 
+      // This is acceptable behavior: we update the latest one found.
+      existingMap.set(key, rec.id)
     })
 
     // 6. CLASSIFY: Create vs Update
