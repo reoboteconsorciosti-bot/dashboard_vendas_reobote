@@ -157,8 +157,11 @@ export async function POST(request: Request) {
 
       // Smart Key Generation
       // If we have strict IDs (Grupo/Cota), use them.
-      // If not (LEGADO), fall back to heuristic (Who + How Much + When).
-      const isLegacy = parsed.grupo === "LEGADO" || parsed.cota === "LEGADO"
+      // If not (LEGADO or "0"), fall back to heuristic (Who + How Much + When).
+      const isLegacy =
+        parsed.grupo === "LEGADO" || parsed.grupo === "0" ||
+        parsed.cota === "LEGADO" || parsed.cota === "0"
+
       const key = isLegacy
         ? `LEGADO-${parsed.consultorNome}-${parsed.valorLiquido}-${parsed.dataVenda.toISOString().split('T')[0]}` // Heuristic Key
         : `${parsed.administradora}-${parsed.grupo}-${parsed.cota}` // Strict Key
@@ -220,7 +223,10 @@ export async function POST(request: Request) {
     const existingMap = new Map<string, string>()
 
     existingRecords.forEach(rec => {
-      const isLegacy = rec.grupo === "LEGADO" || rec.cota === "LEGADO"
+      const isLegacy =
+        rec.grupo === "LEGADO" || rec.grupo === "0" ||
+        rec.cota === "LEGADO" || rec.cota === "0"
+
       let key = ""
 
       if (isLegacy) {
