@@ -139,7 +139,7 @@ export async function POST(request: Request) {
         valorLiquido: findValue(rawItem, ["valorLiquido", "valor_liquido"]),
         valorBruto: findValue(rawItem, ["valorBruto", "valor_bruto"]),
         dataVenda: findValue(rawItem, ["dataVenda", "data_venda", "data"]),
-        mesCompetencia: findValue(rawItem, ["mesCompetencia", "mes_competencia"])
+        mesCompetencia: findValue(rawItem, ["mesCompetencia", "mes_competencia", "mes_ano"])
       }
 
       const result = SaleSchema.safeParse(normalizedData)
