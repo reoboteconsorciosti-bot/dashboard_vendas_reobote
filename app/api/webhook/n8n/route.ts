@@ -152,8 +152,46 @@ export async function POST(request: Request) {
         }
       }
 
+      const parseCompetencia = (value: string | undefined | null, dateVenda: Date) => {
+        if (!value || value === "Mês Inválido") {
+          return `${dateVenda.getMonth() + 1}/${dateVenda.getFullYear()}`
+        }
+
+        const str = String(value).trim().toLowerCase()
+
+        // Map portuguese names
+        const months: Record<string, number> = {
+          janeiro: 1, jan: 1,
+          fevereiro: 2, fev: 2,
+          marco: 3, mar: 3, março: 3,
+          abril: 4, abr: 4,
+          maio: 5, mai: 5,
+          junho: 6, jun: 6,
+          julho: 7, jul: 7,
+          agosto: 8, ago: 8,
+          setembro: 9, set: 9,
+          outubro: 10, out: 10,
+          novembro: 11, nov: 11,
+          dezembro: 12, dez: 12
+        }
+
+        // Check if starts with a month name
+        for (const [name, num] of Object.entries(months)) {
+          if (str.startsWith(name)) {
+            // Try to find year
+            const yearMatch = str.match(/\d{4}/)
+            // If year found, use it. If not, use the year from the sale date? 
+            // Or 2026? Safer to use the year found, or fallback to dataVenda year.
+            const year = yearMatch ? yearMatch[0] : dateVenda.getFullYear()
+            return `${num}/${year}`
+          }
+        }
+
+        return str
+      }
+
       const parsed = result.data
-      const mesCompetencia = parsed.mesCompetencia || `${parsed.dataVenda.getMonth() + 1}/${parsed.dataVenda.getFullYear()}`
+      const mesCompetencia = parseCompetencia(parsed.mesCompetencia, parsed.dataVenda)
 
       // Smart Key Generation
       // If we have strict IDs (Grupo/Cota), use them.
